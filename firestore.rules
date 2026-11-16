@@ -37,6 +37,20 @@ service cloud.firestore {
     match /codesUsed/{h} {
       allow create: if request.auth != null && request.resource.data.by == request.auth.uid;
     }
+    // Amistades (id = uidA_uidB ordenados), m = [uidA, uidB]
+    match /fs/{id} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.m;
+      allow create: if request.auth != null && request.resource.data.from == request.auth.uid
+                    && request.resource.data.m.size() == 2 && request.auth.uid in request.resource.data.m
+                    && request.resource.data.m[0] < request.resource.data.m[1]
+                    && id == request.resource.data.m[0] + '_' + request.resource.data.m[1]
+                    && request.resource.data.st == 'p';
+      allow update: if request.auth != null && request.auth.uid in resource.data.m
+                    && request.auth.uid != resource.data.from && resource.data.st == 'p'
+                    && request.resource.data.st == 'a'
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st','tn']);
+      allow delete: if request.auth != null && request.auth.uid in resource.data.m;
+    }
     // Grupos: cualquiera con sesión puede leer, crear y unirse/salir (solo cambiando "members")
     match /groups/{code} {
       allow read: if request.auth != null;

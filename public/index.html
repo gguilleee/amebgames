@@ -2075,7 +2075,7 @@ function histHtml(p){const days=p.days||{},wins=p.wins||{};const now=shiftedNow(
 <script>
 (function(){
 if(typeof FB==='undefined')return;
-const SG={fr:[],cards:{},duels:[],dunsub:null,funsub:null,reqIn:[],reqOut:[],seenDuel:{}};let HB=Date.now();
+const SG={fr:[],cards:{},duels:[],dunsub:null,funsub:null,reqIn:[],reqOut:[],seenDuel:{},fs:[]};let HB=Date.now();
 const DGAMES={wordle:'Palabra del día',trivial:'Trivial',sudoku:'Sudoku',conex:'Conexiones',master:'Mastermind',encad:'Encadenados'};
 const DSTART={wordle:()=>{go('wordle');wNew('free')},trivial:()=>{go('triv');tNew('free')},sudoku:()=>{go('sudo');sNew('free')},conex:()=>{go('con');kNew('free')},master:()=>{go('mast');mNew('free')},encad:()=>{go('enc');eNew('free')}};
 const _pc=publicCard;publicCard=function(){const c=_pc();c.nl=String(P0().name||'').trim().toLowerCase();c.uid=FBUSER?FBUSER.uid:'';c.on=HB;return c};
@@ -2084,8 +2084,9 @@ setInterval(()=>{beat();refreshSocial()},60000);document.addEventListener('visib
 const isOn=c=>c&&c.on&&Date.now()-c.on<150000;
 const me=()=>FBUSER&&FBUSER.uid;
 const needLogin=()=>{if(me())return false;toast('Inicia sesión o entra como invitado para usar amigos y duelos');if(typeof maybeShowLogin==='function')maybeShowLogin();return true};
-function friendsOf(){const p=P0();return p.fr||[]}
-function setFriends(a){const p=P0();p.fr=[...new Set(a)].filter(x=>x&&x!==me());Psave(p)}
+const pid=u=>[me(),u].sort().join('_');
+function friendsOf(){return SG.fs.filter(f=>f.st==='a').map(f=>f.m.find(x=>x!==me())).filter(Boolean)}
+function setFriends(){}
 function card(uid){return SG.cards[uid]||{n:'…',l:1}}
 function listenFriends(){if(!me())return;const ids=friendsOf().slice(0,30);if(SG.funsub){SG.funsub();SG.funsub=null}if(!ids.length)return;
  SG.funsub=FB.db.collection('players').where(firebase.firestore.FieldPath.documentId(),'in',ids).onSnapshot(s=>{const wk=weekKey();const myPts=(P0().wp||0);s.docs.forEach(d=>{const old=SG.cards[d.id];const c=d.data();SG.cards[d.id]=c;const pts=c.w===wk?c.p:0;const opts=old&&old.w===wk?old.p:0;if(old&&opts<=myPts&&pts>myPts)notify(c.n+' te ha adelantado','Tiene '+pts+' pts esta semana. ¡Recupera el puesto!')});refreshSocial()},()=>{})}
@@ -2095,10 +2096,20 @@ function listenDuels(){if(!me()||SG.dunsub)return;SG.dunsub=FB.db.collection('du
   if(ch.type==='modified'&&SG.ready&&!d.rej&&d.as!=null&&d.bs!=null){const mine=d.a===me()?d.as:d.bs,his=d.a===me()?d.bs:d.as;notify('Duelo terminado',mine>his?'¡Has ganado a '+(d.a===me()?d.bn:d.an)+'!':mine<his?'Has perdido contra '+(d.a===me()?d.bn:d.an):'Empate')}});
  SG.duels=s.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>(y.t||0)-(x.t||0));SG.ready=true;refreshSocial()},()=>{})}
 window.socialStart=function(){beat();listenFriends();listenDuels();listenReqs();setTimeout(dailyNudge,3000)};
-function listenReqs(){if(!me()||SG.rsub)return;let first=true;
- SG.rsub=FB.db.collection('freq').where('to','==',me()).onSnapshot(s=>{const prev=new Set(SG.reqIn.map(r=>r.id));SG.reqIn=s.docs.map(d=>({id:d.id,...d.data()})).filter(r=>r.st==='p');SG.reqIn.forEach(r=>{if(!prev.has(r.id)&&!first)notify('Solicitud de amistad',r.fn+' quiere ser tu amigo')});if(first&&SG.reqIn.length)setTimeout(()=>toast('Tienes '+SG.reqIn.length+' solicitud'+(SG.reqIn.length>1?'es':'')+' de amistad'),1500);first=false;refreshSocial()},()=>{});
- SG.osub=FB.db.collection('freq').where('from','==',me()).onSnapshot(s=>{const fr=friendsOf();let ch=false;SG.reqOut=[];s.docs.forEach(d=>{const r=d.data();if(r.st==='a'&&!fr.includes(r.to)){fr.push(r.to);ch=true;notify('¡Nuevo amigo!',(r.tn||'Tu amigo')+' ha aceptado tu solicitud');d.ref.delete().catch(()=>{})}else if(r.st==='r'){d.ref.delete().catch(()=>{})}else if(r.st==='p')SG.reqOut.push(r.to)});if(ch){setFriends(fr);listenFriends()}refreshSocial()},()=>{})}
-window.reqAnswer=async function(id,ok){const r=SG.reqIn.find(x=>x.id===id);if(!r)return;try{await FB.db.collection('freq').doc(id).update({st:ok?'a':'r',tn:P0().name||'Jugador'});if(ok){setFriends([...friendsOf(),r.from]);listenFriends();sfx('win');toast('Ahora eres amigo de '+r.fn)}else toast('Solicitud rechazada')}catch(e){toast('No se pudo responder')}};
+function listenReqs(){if(!me()||SG.rsub)return;let first=true;SG.fs=SG.fs||[];
+ SG.rsub=FB.db.collection('fs').where('m','array-contains',me()).onSnapshot(s=>{const prevIn=new Set(SG.reqIn.map(r=>r.id));const prevFr=new Set(friendsOf());
+  SG.fs=s.docs.map(d=>({id:d.id,...d.data()}));
+  SG.reqIn=SG.fs.filter(f=>f.st==='p'&&f.from!==me()).map(f=>({id:f.id,from:f.from,fn:f.fn||'Jugador'}));
+  SG.reqOut=SG.fs.filter(f=>f.st==='p'&&f.from===me()).map(f=>f.m.find(x=>x!==me()));
+  if(!first){SG.reqIn.forEach(r=>{if(!prevIn.has(r.id))notify('Solicitud de amistad',r.fn+' quiere ser tu amigo')});friendsOf().forEach(u=>{if(!prevFr.has(u)){const f=SG.fs.find(x=>x.m.includes(u));if(f&&f.from===me())notify('¡Nuevo amigo!',(f.tn||'Tu amigo')+' ha aceptado tu solicitud')}})}
+  else{if(SG.reqIn.length)setTimeout(()=>toast('Tienes '+SG.reqIn.length+' solicitud'+(SG.reqIn.length>1?'es':'')+' de amistad'),1500);migrateOld()}
+  first=false;listenFriends();refreshSocial()},e=>{console.warn('fs',e)})}
+async function migrateOld(){const p=P0();const old=(p.fr||[]).filter(u=>u&&u!==me());if(!old.length)return;for(const u of old){try{await sendReq(u,true)}catch(e){}}const q=P0();delete q.fr;Psave(q)}
+async function sendReq(uid,silent){const ref=FB.db.collection('fs').doc(pid(uid));const ex=SG.fs.find(f=>f.id===pid(uid));
+ if(ex){if(ex.st==='a'){if(!silent)toast('Ya sois amigos');return}if(ex.from!==me()){return reqAnswer(ex.id,true)}if(!silent)toast('Ya le enviaste una solicitud');return}
+ try{await ref.set({m:[me(),uid].sort(),from:me(),fn:P0().name||'Jugador',st:'p',t:Date.now()});if(!silent){sfx('ok');toast('Solicitud enviada')}}
+ catch(e){try{const d=await ref.get();if(d.exists&&d.data().st==='p'&&d.data().from!==me())return reqAnswer(d.id,true);if(d.exists&&d.data().st==='a'){if(!silent)toast('Ya sois amigos');return}}catch(_){}if(!silent)toast('No se pudo enviar la solicitud')}}
+window.reqAnswer=async function(id,ok){try{const ref=FB.db.collection('fs').doc(id);if(ok){await ref.update({st:'a',tn:P0().name||'Jugador'});sfx('win');const r=SG.reqIn.find(x=>x.id===id);toast('Ahora eres amigo de '+((r&&r.fn)||'tu amigo'))}else{await ref.delete();toast('Solicitud rechazada')}}catch(e){toast('No se pudo responder')}};
 function refreshSocial(){if(document.getElementById('prof').classList.contains('on'))renderProf();updDuelBadge()}
 function updDuelBadge(){const n=SG.duels.filter(d=>!d.rej&&((d.a===me()&&d.as==null)||(d.b===me()&&d.bs==null))).length+SG.reqIn.length;const b=document.querySelector('.bnav button[data-v="prof"]');if(b){let s=b.querySelector('.dbg');if(!s){s=document.createElement('em');s.className='dbg';s.style.cssText='position:absolute;top:2px;right:18%;min-width:18px;height:18px;border-radius:9px;background:#ff4d5e;color:#fff;font-size:11px;font-style:normal;display:grid;place-items:center;padding:0 4px';b.style.position='relative';b.appendChild(s)}s.textContent=n;s.style.display=n?'grid':'none'}}
 // notificaciones
@@ -2110,10 +2121,8 @@ window.frAddModal=function(){if(needLogin())return;modal(`<h3>Añadir amigo</h3>
 let srT=null;window.frSearch=function(){clearTimeout(srT);srT=setTimeout(async()=>{const q=(document.getElementById('frQ').value||'').trim().toLowerCase();const box=document.getElementById('frRes');if(!box)return;if(q.length<2){box.innerHTML='<small style="color:rgba(255,255,255,.6);text-align:center">Escribe al menos 2 letras</small>';return}
  try{const s=await FB.db.collection('players').orderBy('nl').startAt(q).endAt(q+'').limit(15).get();const fr=friendsOf();const r=s.docs.filter(d=>d.id!==me());
   box.innerHTML=r.length?r.map(d=>{const c=d.data();SG.cards[d.id]=c;return `<div class="frw">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),36)}<div class="rn"><b>${nameHtml(c.n,itemOf('color',c.c||'blanco'))}</b><small>Nivel ${c.l||1}</small></div>${fr.includes(d.id)?'<small>Ya es tu amigo</small>':SG.reqOut.includes(d.id)?'<small>Solicitud enviada</small>':`<button class="btn b-lime" onclick="frAdd('${d.id}')">Añadir</button>`}</div>`}).join(''):'<small style="color:rgba(255,255,255,.6);text-align:center">No hay nadie con ese nombre</small>'}catch(e){box.innerHTML='<small>No se pudo buscar</small>'}},300)};
-window.frAdd=async function(uid){if(needLogin())return;if(uid===me()){toast('Ese eres tú');return}if(friendsOf().includes(uid)){toast('Ya sois amigos');closeM();return}
- const inc=SG.reqIn.find(r=>r.from===uid);if(inc){closeM();reqAnswer(inc.id,true);return}
- try{await FB.db.collection('freq').doc(me()+'_'+uid).set({from:me(),to:uid,fn:P0().name||'Jugador',st:'p',t:Date.now()});sfx('ok');toast('Solicitud enviada');closeM();renderProf()}catch(e){toast('No se pudo enviar la solicitud')}};
-window.frDel=function(uid){setFriends(friendsOf().filter(x=>x!==uid));listenFriends();renderProf()};
+window.frAdd=async function(uid){if(needLogin())return;if(uid===me()){toast('Ese eres tú');return}closeM();await sendReq(uid,false);renderProf()};
+window.frDel=async function(uid){try{await FB.db.collection('fs').doc(pid(uid)).delete()}catch(e){toast('No se pudo eliminar')}};
 window.frMyQR=function(){if(needLogin())return;const link=location.origin+'/#f-'+me();modal(`<h3>Tu QR de amigo</h3><p style="text-align:center;color:rgba(255,255,255,.7);font-size:13px;margin-bottom:10px">Que tu amigo lo escanee con la cámara del móvil o desde «Escanear QR».</p><div class="qrbox" id="frQR"></div><div class="row" style="margin-top:10px"><button class="btn b-lime" onclick="copyTxt('${link}')">Copiar enlace</button><button class="back" onclick="closeM()">Cerrar</button></div>`);setTimeout(()=>{const b=document.getElementById('frQR');if(b&&window.QRCode)new QRCode(b,{text:link,width:200,height:200,colorDark:'#0b1120',colorLight:'#fff'})},40)};
 let qrStream=null;
 window.frScan=async function(){if(needLogin())return;modal(`<h3>Escanear QR</h3><video id="qrVid" playsinline muted></video><canvas id="qrCan" style="display:none"></canvas><div class="row" style="margin-top:10px"><button class="back" onclick="frStop();closeM()">Cancelar</button></div>`);
