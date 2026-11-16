@@ -714,6 +714,26 @@ body:after{background-image:
   <div class="board" id="board"></div>
   <div class="kb" id="kb"></div>
 </section>
+<section id="tetris" class="view">
+ <div class="top"><button class="back" onclick="trStop();go('home')">← Inicio</button><div class="ttl">TETRIS</div><div style="width:70px"></div></div>
+ <div class="trwrap">
+  <canvas id="trCv" width="200" height="400"></canvas>
+  <div class="trside"><div class="trbox"><small>Puntos</small><b id="trSc">0</b></div><div class="trbox"><small>Líneas</small><b id="trLn">0</b></div><div class="trbox"><small>Nivel</small><b id="trLv">1</b></div><div class="trbox"><small>Siguiente</small><canvas id="trNx" width="80" height="80"></canvas></div><div class="trbox"><small>Récord</small><b id="trBest">0</b></div><button class="btn b-lime" style="padding:8px 10px!important" onclick="trPause()" id="trPb">Pausa</button></div>
+ </div>
+ <div class="trpad"><button onpointerdown="trAct('L')">◀</button><button onpointerdown="trAct('R')">▶</button><button onpointerdown="trAct('U')">⟳</button><button onpointerdown="trAct('D')">▼</button><button onpointerdown="trAct('H')">⤓</button></div>
+</section>
+<style>
+.trwrap{display:flex;gap:12px;justify-content:center;align-items:flex-start;margin-top:8px}
+#trCv{width:min(60vw,260px);aspect-ratio:1/2;height:auto;border-radius:12px;background:rgba(5,8,25,.75);border:1.5px solid rgba(255,255,255,.25);box-shadow:0 10px 30px rgba(0,0,0,.4);touch-action:none}
+.trside{display:flex;flex-direction:column;gap:8px;width:96px}
+.trbox{padding:8px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);text-align:center;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.trbox small{display:block;color:rgba(255,255,255,.7);font-size:11px}.trbox b{font-family:var(--fd);font-size:18px}
+#trNx{width:64px;height:64px}
+.trpad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:420px;margin:14px auto 0}
+.trpad button{height:56px;border-radius:14px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;font-size:22px;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.trpad button:active{background:rgba(255,255,255,.3)}
+@media(min-width:900px){.trpad{display:none}}
+</style>
 <section id="hang" class="view">
   <div class="top"><button class="back" onclick="go('home')">← Inicio</button><div class="ttl">AHORCADO</div><div style="width:70px"></div></div>
   <div class="hcat" id="hCat"></div>
@@ -1089,7 +1109,7 @@ function updHome(){const p=P0();const ids=Object.keys(GAMES);const d=dailyDone(p
  set('hFeat',next?`<button class="feat" style="--gc:${GC[next]}" onclick="${GO[next]}"><div><span class="kicker">Siguiente reto</span><b>${GAMES[next]}</b><span class="play">Jugar</span></div><span class="fimg" style="background-image:url(img/g-${next}.svg)"></span></button>`:`<div class="alldone">Has jugado todos los retos de hoy</div>`);
  const tile=(id,daily)=>{const dn=daily&&(p.g[id]||{}).last===today();return `<button class="tile2${dn?' done':''}" onclick="${GO[id]}" aria-label="${GNAME[id]}"><span class="timg" style="background-image:url(img/g-${id}.svg)"></span><span class="tname">${GNAME[id]}</span>${dn?'<span class="tok">✔</span>':''}</button>`};
  set('qRow',`<button class="qcard ${wheelDone()?'':'hot'}" onclick="openWheel()"><span class="qi">${miniWheel()}</span><span><b>Ruleta diaria</b><small>${wheelDone()?'Vuelve mañana':'Tirada gratis'}</small></span></button><button class="qcard" onclick="installInfo()"><span class="qi" style="background:var(--card2)">${ico('games',24)}</span><span><b>Instalar</b><small>Tenla como app</small></span></button>`);
- set('gDaily',ids.map(id=>tile(id,true)).join(''));set('gFree',['pasa','hang'].map(id=>tile(id,false)).join(''))}
+ set('gDaily',ids.map(id=>tile(id,true)).join(''));set('gFree',['pasa','hang','tetris'].map(id=>tile(id,false)).join(''))}
 
 // --- Grupos por código (sin servidor) ---
 // --- Invitaciones por enlace y QR ---
@@ -1832,7 +1852,7 @@ function updHome(){const p=P0();const ids=Object.keys(GAMES);const d=dailyDone(p
  const wc=wcState(p);Psave(p);
  set('wcBox',`<div class="shead2"><h3>Retos semanales</h3><span>Terminan en ${dh(msToWeek())}</span></div>`+wc.ids.map(cid=>{const c=WCH.find(x=>x.id===cid);const v=wc.prog[cid]||0,done=v>=c.n,cl=wc.claimed.includes(cid);return `<div class="wcc${done&&!cl?' ready':''}${cl?' cl':''}"><div class="wct"><b>${c.t}</b><div class="wcb"><i style="width:${v/c.n*100}%"></i></div><small>${Math.min(v,c.n)} / ${c.n}</small></div>${cl?`<span class="wcok">${ico('check',18)}</span>`:done?`<button class="wcbtn" onclick="claimWc('${cid}')">Recoger<br><i class="coin"></i>${c.r}</button>`:`<span class="wcr"><i class="coin"></i>${c.r}</span>`}</div>`}).join(''));
  const tile=(id,daily)=>{const dn=daily&&(p.g[id]||{}).last===today();return `<button class="tile2${dn?' done':''}" onclick="${GO[id]}" aria-label="${GNAME[id]}"><span class="timg" style="background-image:url(img/g-${id}.svg)"></span><span class="tname">${GNAME[id]}</span>${dn?'<span class="tok">✔</span>':''}</button>`};
- set('gDaily',ids.map(id=>tile(id,true)).join(''));set('gFree',['pasa','hang'].map(id=>tile(id,false)).join(''))}
+ set('gDaily',ids.map(id=>tile(id,true)).join(''));set('gFree',['pasa','hang','tetris'].map(id=>tile(id,false)).join(''))}
 function streakInfo(){const p=P0();const st=curStreak(p);const nx=Object.keys(STREAKMS).map(Number).find(k=>k>st);
  modal(`<h3>Tu racha</h3><div class="streakbig">${flame(88,(p.gs||{}).last===today())}<b>${st}</b><small>día${st===1?'':'s'} seguidos</small></div><p style="text-align:center;color:var(--mut);margin:6px 0 14px">Juega al menos un reto diario cada día para mantenerla. Se reinicia a las 8:00.</p>
  <div class="msrow">${Object.entries(STREAKMS).map(([k,v])=>`<div class="${st>=k?'ok':''}"><b>${k}</b><small>días</small><span><i class="coin"></i>${v}</span></div>`).join('')}</div>
@@ -2047,14 +2067,18 @@ function histHtml(p){const days=p.days||{},wins=p.wins||{};const now=shiftedNow(
 #qrVid{width:100%;border-radius:14px;background:#000;aspect-ratio:1;object-fit:cover}
 .grank .rk.me{outline:2px solid #ffc53d}
 .ntog{margin-top:6px}
+.ondot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7a849f;margin-right:5px;vertical-align:middle}.ondot.on{background:#3ee06a;box-shadow:0 0 8px #3ee06a}
 </style>
 <script>
 (function(){
 if(typeof FB==='undefined')return;
-const SG={fr:[],cards:{},duels:[],dunsub:null,funsub:null};
+const SG={fr:[],cards:{},duels:[],dunsub:null,funsub:null,reqIn:[],reqOut:[],seenDuel:{}};let HB=Date.now();
 const DGAMES={wordle:'Palabra del día',trivial:'Trivial',sudoku:'Sudoku',conex:'Conexiones',master:'Mastermind',encad:'Encadenados'};
 const DSTART={wordle:()=>{go('wordle');wNew('free')},trivial:()=>{go('triv');tNew('free')},sudoku:()=>{go('sudo');sNew('free')},conex:()=>{go('con');kNew('free')},master:()=>{go('mast');mNew('free')},encad:()=>{go('enc');eNew('free')}};
-const _pc=publicCard;publicCard=function(){const c=_pc();c.nl=String(P0().name||'').trim().toLowerCase();c.uid=FBUSER?FBUSER.uid:'';return c};
+const _pc=publicCard;publicCard=function(){const c=_pc();c.nl=String(P0().name||'').trim().toLowerCase();c.uid=FBUSER?FBUSER.uid:'';c.on=HB;return c};
+function beat(){if(!me()||document.hidden)return;HB=Date.now();FB.db.collection('players').doc(me()).update({on:HB}).catch(()=>{})}
+setInterval(()=>{beat();refreshSocial()},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});
+const isOn=c=>c&&c.on&&Date.now()-c.on<150000;
 const me=()=>FBUSER&&FBUSER.uid;
 const needLogin=()=>{if(me())return false;toast('Inicia sesión con Google para usar amigos y duelos');if(typeof maybeShowLogin==='function')maybeShowLogin();return true};
 function friendsOf(){const p=P0();return p.fr||[]}
@@ -2063,12 +2087,17 @@ function card(uid){return SG.cards[uid]||{n:'…',l:1}}
 function listenFriends(){if(!me())return;const ids=friendsOf().slice(0,30);if(SG.funsub){SG.funsub();SG.funsub=null}if(!ids.length)return;
  SG.funsub=FB.db.collection('players').where(firebase.firestore.FieldPath.documentId(),'in',ids).onSnapshot(s=>{const wk=weekKey();const myPts=(P0().wp||0);s.docs.forEach(d=>{const old=SG.cards[d.id];const c=d.data();SG.cards[d.id]=c;const pts=c.w===wk?c.p:0;const opts=old&&old.w===wk?old.p:0;if(old&&opts<=myPts&&pts>myPts)notify(c.n+' te ha adelantado','Tiene '+pts+' pts esta semana. ¡Recupera el puesto!')});refreshSocial()},()=>{})}
 function listenDuels(){if(!me()||SG.dunsub)return;SG.dunsub=FB.db.collection('duels').where('p','array-contains',me()).onSnapshot(s=>{
- s.docChanges().forEach(ch=>{const d=ch.doc.data();if(ch.type==='added'&&d.b===me()&&d.bs==null&&Date.now()-(d.t||0)<864e5&&SG.ready)notify('¡'+d.an+' te reta!','Duelo de '+DGAMES[d.g]+'. Entra a jugarlo.');
-  if(ch.type==='modified'&&SG.ready&&d.as!=null&&d.bs!=null){const mine=d.a===me()?d.as:d.bs,his=d.a===me()?d.bs:d.as;notify('Duelo terminado',mine>his?'¡Has ganado a '+(d.a===me()?d.bn:d.an)+'!':mine<his?'Has perdido contra '+(d.a===me()?d.bn:d.an):'Empate')}});
+ s.docChanges().forEach(ch=>{const d=ch.doc.data();if(ch.type==='added'&&d.b===me()&&d.bs==null&&!d.rej&&Date.now()-(d.t||0)<864e5){if(SG.ready)notify('¡'+d.an+' te reta!','Duelo de '+DGAMES[d.g]+'. Entra a jugarlo.');setTimeout(()=>duelPopup(ch.doc.id),SG.ready?300:1500)}
+  if(ch.type==='modified'&&SG.ready&&d.rej&&d.a===me())notify('Duelo rechazado',d.bn+' ha rechazado tu reto de '+DGAMES[d.g]);
+  if(ch.type==='modified'&&SG.ready&&!d.rej&&d.as!=null&&d.bs!=null){const mine=d.a===me()?d.as:d.bs,his=d.a===me()?d.bs:d.as;notify('Duelo terminado',mine>his?'¡Has ganado a '+(d.a===me()?d.bn:d.an)+'!':mine<his?'Has perdido contra '+(d.a===me()?d.bn:d.an):'Empate')}});
  SG.duels=s.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>(y.t||0)-(x.t||0));SG.ready=true;refreshSocial()},()=>{})}
-window.socialStart=function(){listenFriends();listenDuels();setTimeout(dailyNudge,3000)};
+window.socialStart=function(){beat();listenFriends();listenDuels();listenReqs();setTimeout(dailyNudge,3000)};
+function listenReqs(){if(!me()||SG.rsub)return;let first=true;
+ SG.rsub=FB.db.collection('freq').where('to','==',me()).onSnapshot(s=>{const prev=new Set(SG.reqIn.map(r=>r.id));SG.reqIn=s.docs.map(d=>({id:d.id,...d.data()})).filter(r=>r.st==='p');SG.reqIn.forEach(r=>{if(!prev.has(r.id)&&!first)notify('Solicitud de amistad',r.fn+' quiere ser tu amigo')});if(first&&SG.reqIn.length)setTimeout(()=>toast('Tienes '+SG.reqIn.length+' solicitud'+(SG.reqIn.length>1?'es':'')+' de amistad'),1500);first=false;refreshSocial()},()=>{});
+ SG.osub=FB.db.collection('freq').where('from','==',me()).onSnapshot(s=>{const fr=friendsOf();let ch=false;SG.reqOut=[];s.docs.forEach(d=>{const r=d.data();if(r.st==='a'&&!fr.includes(r.to)){fr.push(r.to);ch=true;notify('¡Nuevo amigo!',(r.tn||'Tu amigo')+' ha aceptado tu solicitud');d.ref.delete().catch(()=>{})}else if(r.st==='r'){d.ref.delete().catch(()=>{})}else if(r.st==='p')SG.reqOut.push(r.to)});if(ch){setFriends(fr);listenFriends()}refreshSocial()},()=>{})}
+window.reqAnswer=async function(id,ok){const r=SG.reqIn.find(x=>x.id===id);if(!r)return;try{await FB.db.collection('freq').doc(id).update({st:ok?'a':'r',tn:P0().name||'Jugador'});if(ok){setFriends([...friendsOf(),r.from]);listenFriends();sfx('win');toast('Ahora eres amigo de '+r.fn)}else toast('Solicitud rechazada')}catch(e){toast('No se pudo responder')}};
 function refreshSocial(){if(document.getElementById('prof').classList.contains('on'))renderProf();updDuelBadge()}
-function updDuelBadge(){const n=SG.duels.filter(d=>(d.a===me()&&d.as==null)||(d.b===me()&&d.bs==null)).length;const b=document.querySelector('.bnav button[data-v="prof"]');if(b){let s=b.querySelector('.dbg');if(!s){s=document.createElement('em');s.className='dbg';s.style.cssText='position:absolute;top:2px;right:18%;min-width:18px;height:18px;border-radius:9px;background:#ff4d5e;color:#fff;font-size:11px;font-style:normal;display:grid;place-items:center;padding:0 4px';b.style.position='relative';b.appendChild(s)}s.textContent=n;s.style.display=n?'grid':'none'}}
+function updDuelBadge(){const n=SG.duels.filter(d=>!d.rej&&((d.a===me()&&d.as==null)||(d.b===me()&&d.bs==null))).length+SG.reqIn.length;const b=document.querySelector('.bnav button[data-v="prof"]');if(b){let s=b.querySelector('.dbg');if(!s){s=document.createElement('em');s.className='dbg';s.style.cssText='position:absolute;top:2px;right:18%;min-width:18px;height:18px;border-radius:9px;background:#ff4d5e;color:#fff;font-size:11px;font-style:normal;display:grid;place-items:center;padding:0 4px';b.style.position='relative';b.appendChild(s)}s.textContent=n;s.style.display=n?'grid':'none'}}
 // notificaciones
 window.notify=function(t,b){toast(t);try{if('Notification' in window&&Notification.permission==='granted'&&P0().notif!==false){if(navigator.serviceWorker&&navigator.serviceWorker.controller)navigator.serviceWorker.ready.then(r=>r.showNotification(t,{body:b,icon:'icons/icon-192.png'}));else new Notification(t,{body:b,icon:'icons/icon-192.png'})}}catch(e){}};
 window.askNotif=async function(){if(!('Notification' in window)){toast('Tu navegador no permite avisos. En iPhone, instala la app en la pantalla de inicio primero.');return}const r=await Notification.requestPermission();const p=P0();p.notif=r==='granted';Psave(p);toast(r==='granted'?'Avisos activados':'Avisos desactivados');if(window.renderSett)renderSett();if(r==='granted')notify('AMEBGAMES','Te avisaremos de duelos y cuando te adelanten.')};
@@ -2077,8 +2106,10 @@ function dailyNudge(){const p=P0();if(p.lastNudge===today())return;p.lastNudge=t
 window.frAddModal=function(){if(needLogin())return;modal(`<h3>Añadir amigo</h3><div class="grow"><input class="ginp" id="frQ" maxlength="16" placeholder="Nombre de tu amigo" autocomplete="off" oninput="frSearch()"></div><div class="srch" id="frRes"><small style="color:rgba(255,255,255,.6);text-align:center">Escribe al menos 2 letras</small></div><div class="row" style="margin-top:12px"><button class="btn b-lime" onclick="frMyQR()">Mi QR</button><button class="btn b-pink" onclick="frScan()">Escanear QR</button></div><div class="row" style="margin-top:8px"><button class="back" onclick="closeM()">Cerrar</button></div>`);setTimeout(()=>document.getElementById('frQ')?.focus(),50)};
 let srT=null;window.frSearch=function(){clearTimeout(srT);srT=setTimeout(async()=>{const q=(document.getElementById('frQ').value||'').trim().toLowerCase();const box=document.getElementById('frRes');if(!box)return;if(q.length<2){box.innerHTML='<small style="color:rgba(255,255,255,.6);text-align:center">Escribe al menos 2 letras</small>';return}
  try{const s=await FB.db.collection('players').orderBy('nl').startAt(q).endAt(q+'').limit(15).get();const fr=friendsOf();const r=s.docs.filter(d=>d.id!==me());
-  box.innerHTML=r.length?r.map(d=>{const c=d.data();SG.cards[d.id]=c;return `<div class="frw">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),36)}<div class="rn"><b>${nameHtml(c.n,itemOf('color',c.c||'blanco'))}</b><small>Nivel ${c.l||1}</small></div>${fr.includes(d.id)?'<small>Ya es tu amigo</small>':`<button class="btn b-lime" onclick="frAdd('${d.id}')">Añadir</button>`}</div>`}).join(''):'<small style="color:rgba(255,255,255,.6);text-align:center">No hay nadie con ese nombre</small>'}catch(e){box.innerHTML='<small>No se pudo buscar</small>'}},300)};
-window.frAdd=function(uid){if(needLogin())return;if(uid===me()){toast('Ese eres tú');return}setFriends([...friendsOf(),uid]);sfx('win');toast('¡Amigo añadido!');closeM();listenFriends();renderProf()};
+  box.innerHTML=r.length?r.map(d=>{const c=d.data();SG.cards[d.id]=c;return `<div class="frw">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),36)}<div class="rn"><b>${nameHtml(c.n,itemOf('color',c.c||'blanco'))}</b><small>Nivel ${c.l||1}</small></div>${fr.includes(d.id)?'<small>Ya es tu amigo</small>':SG.reqOut.includes(d.id)?'<small>Solicitud enviada</small>':`<button class="btn b-lime" onclick="frAdd('${d.id}')">Añadir</button>`}</div>`}).join(''):'<small style="color:rgba(255,255,255,.6);text-align:center">No hay nadie con ese nombre</small>'}catch(e){box.innerHTML='<small>No se pudo buscar</small>'}},300)};
+window.frAdd=async function(uid){if(needLogin())return;if(uid===me()){toast('Ese eres tú');return}if(friendsOf().includes(uid)){toast('Ya sois amigos');closeM();return}
+ const inc=SG.reqIn.find(r=>r.from===uid);if(inc){closeM();reqAnswer(inc.id,true);return}
+ try{await FB.db.collection('freq').doc(me()+'_'+uid).set({from:me(),to:uid,fn:P0().name||'Jugador',st:'p',t:Date.now()});sfx('ok');toast('Solicitud enviada');closeM();renderProf()}catch(e){toast('No se pudo enviar la solicitud')}};
 window.frDel=function(uid){setFriends(friendsOf().filter(x=>x!==uid));listenFriends();renderProf()};
 window.frMyQR=function(){if(needLogin())return;const link=location.origin+'/#f-'+me();modal(`<h3>Tu QR de amigo</h3><p style="text-align:center;color:rgba(255,255,255,.7);font-size:13px;margin-bottom:10px">Que tu amigo lo escanee con la cámara del móvil o desde «Escanear QR».</p><div class="qrbox" id="frQR"></div><div class="row" style="margin-top:10px"><button class="btn b-lime" onclick="copyTxt('${link}')">Copiar enlace</button><button class="back" onclick="closeM()">Cerrar</button></div>`);setTimeout(()=>{const b=document.getElementById('frQR');if(b&&window.QRCode)new QRCode(b,{text:link,width:200,height:200,colorDark:'#0b1120',colorLight:'#fff'})},40)};
 let qrStream=null;
@@ -2090,25 +2121,29 @@ window.frStop=function(){if(qrStream){qrStream.getTracks().forEach(t=>t.stop());
 function frHash(){const m=(location.hash||'').match(/^#f-([A-Za-z0-9]{10,40})$/);if(!m)return;try{history.replaceState(null,'',location.pathname)}catch(e){}if(me())frAdd(m[1]);else{try{sessionStorage.setItem('amebPendingFriend',m[1])}catch(e){}toast('Inicia sesión para añadir a tu amigo')}}
 window.addEventListener('hashchange',frHash);setTimeout(frHash,500);
 // duelos
-window.duelPick=function(uid){if(needLogin())return;const c=card(uid);modal(`<h3>Retar a ${esc(c.n)}</h3><p style="text-align:center;color:rgba(255,255,255,.7);font-size:13px">Elige el juego. Jugaréis exactamente la misma partida y gana quien saque más puntos.</p><div class="gpick">${Object.entries(DGAMES).map(([k,n])=>`<button onclick="duelCreate('${uid}','${k}')">${n}</button>`).join('')}</div><div class="row"><button class="back" onclick="closeM()">Cancelar</button></div>`)};
-window.duelCreate=async function(uid,g){const c=card(uid);const d={a:me(),b:uid,p:[me(),uid],an:P0().name||'Jugador',bn:c.n||'Jugador',g,seed:Math.floor(Math.random()*2e9),as:null,bs:null,t:Date.now()};
+const activeWith=uid=>SG.duels.find(d=>d.p.includes(uid)&&!d.rej&&(d.as==null||d.bs==null));
+window.duelPick=function(uid){if(needLogin())return;const c=card(uid);if(activeWith(uid)){toast('Ya tenéis un duelo en marcha. Terminadlo antes de otro.');return}modal(`<h3>Retar a ${esc(c.n)}</h3><p style="text-align:center;color:rgba(255,255,255,.7);font-size:13px">Elige el juego. Jugaréis exactamente la misma partida y gana quien saque más puntos.</p><div class="gpick">${Object.entries(DGAMES).map(([k,n])=>`<button onclick="duelCreate('${uid}','${k}')">${n}</button>`).join('')}</div><div class="row"><button class="back" onclick="closeM()">Cancelar</button></div>`)};
+window.duelCreate=async function(uid,g){if(activeWith(uid)){closeM();toast('Ya tenéis un duelo en marcha');return}const c=card(uid);const d={a:me(),b:uid,p:[me(),uid],an:P0().name||'Jugador',bn:c.n||'Jugador',g,seed:Math.floor(Math.random()*2e9),as:null,bs:null,t:Date.now()};
  try{const r=await FB.db.collection('duels').add(d);closeM();toast('Reto enviado. ¡Ahora juega tu partida!');setTimeout(()=>duelPlay(r.id,d),400)}catch(e){toast('No se pudo crear el duelo')}};
 let DUEL=null;
+window.duelReject=async function(id){try{await FB.db.collection('duels').doc(id).update({rej:true});closeM();toast('Duelo rechazado')}catch(e){toast('No se pudo rechazar')}};
+window.duelPopup=function(id){const d=SG.duels.find(x=>x.id===id);if(!d||d.rej||d.bs!=null||d.b!==me()||SG.seenDuel[id])return;if(document.querySelector('.modal.on'))return;SG.seenDuel[id]=1;sfx('win');modal(`<h3>¡${esc(d.an)} te reta!</h3><div class="reveal" style="text-align:center">Duelo de <b>${DGAMES[d.g]}</b><br><span style="color:rgba(255,255,255,.7)">Jugaréis la misma partida. Gana quien saque más puntos.</span></div><div class="row"><button class="btn b-lime" onclick="closeM();duelPlay('${id}')">Aceptar y jugar</button><button class="back" onclick="duelReject('${id}')">Rechazar</button></div><div class="row" style="margin-top:6px"><button class="back" style="background:transparent!important" onclick="closeM()">Más tarde</button></div>`)};
 function seeded(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-window.duelPlay=function(id,dd){const d=dd||SG.duels.find(x=>x.id===id);if(!d)return;const side=d.a===me()?'as':'bs';if(d[side]!=null){toast('Ya has jugado este duelo');return}
+window.duelPlay=function(id,dd){const d=dd||SG.duels.find(x=>x.id===id);if(!d)return;const side=d.a===me()?'as':'bs';if(d[side]!=null){toast('Ya has jugado este duelo');return}if(d.rej){toast('Este duelo fue rechazado');return}
  DUEL={id,g:d.g,side,d};const orig=Math.random;Math.random=seeded(d.seed);try{DSTART[d.g]()}finally{Math.random=orig}toast('Duelo contra '+(d.a===me()?d.bn:d.an))};
 const SC={wordle:w=>w?(7-G.row)*100:0,trivial:()=>T.ok*100+Math.round(T.speed||0),sudoku:w=>w?Math.max(100,3000-sSecs()-S.err*200):0,conex:w=>w?500-K.mist*100:0,master:w=>w?(11-M.rows.length)*100:0,encad:()=>E.ok*100+(E.left||0)};
 const ENDS={wordle:'wEnd',trivial:'tEnd',sudoku:'sEnd',conex:'kEnd',master:'mEnd',encad:'eEnd'};
 Object.entries(ENDS).forEach(([g,fn])=>{const o=window[fn];if(!o)return;window[fn]=function(...a){const r=o.apply(this,a);if(DUEL&&DUEL.g===g){const sc=SC[g](a[0]);const D=DUEL;DUEL=null;FB.db.collection('duels').doc(D.id).update({[D.side]:sc}).then(()=>{setTimeout(()=>{const x=SG.duels.find(z=>z.id===D.id)||D.d;const other=D.side==='as'?x.bs:x.as;toast(other==null?'Duelo: '+sc+' pts. Esperando a tu rival…':(sc>other?'¡Ganas el duelo! ':sc<other?'Pierdes el duelo. ':'¡Empate! ')+sc+' – '+other)},1800)}).catch(()=>toast('No se pudo guardar el duelo'))}return r}});
 const _go2=window.go;window.go=function(v){if(DUEL&&['home','groups','shop','prof'].includes(v))DUEL=null;_go2(v)};
 function duelRow(d){const mineA=d.a===me();const rival=mineA?d.bn:d.an;const mine=mineA?d.as:d.bs,his=mineA?d.bs:d.as;let st,act='';
- if(mine==null){st='Te toca jugar';act=`<button class="btn b-lime" onclick="duelPlay('${d.id}')">Jugar</button>`}else if(his==null)st='Esperando a '+esc(rival);else st=mine>his?'Has ganado':mine<his?'Has perdido':'Empate';
+ if(d.rej){st=mineA?esc(rival)+' rechazó el duelo':'Rechazaste el duelo'}else if(mine==null){st='Te toca jugar';act=`<button class="btn b-lime" onclick="duelPlay('${d.id}')">Jugar</button>`+(mineA?'':`<button class="back" style="padding:6px 9px" onclick="duelReject('${d.id}')" aria-label="Rechazar">✕</button>`)}else if(his==null)st='Esperando a '+esc(rival);else st=mine>his?'Has ganado':mine<his?'Has perdido':'Empate';
  return `<div class="duel setrow"><div class="dv"><b>vs ${esc(rival)} · ${DGAMES[d.g]}</b><small>${st}</small></div>${mine!=null?`<span class="dsc">${mine}${his!=null?' – '+his:''}</span>`:''}${act}</div>`}
 window.socialHook=function(el){const fr=friendsOf();const wk=weekKey();
  let h=`<h3 class="ph">Amigos</h3>`;
  if(!me())h+=`<div class="setrow"><span>Inicia sesión con Google para añadir amigos y retarles</span></div>`;
  else{h+=`<div class="grow" style="margin-bottom:8px"><button class="btn b-lime" onclick="frAddModal()">+ Añadir amigo</button><button class="btn" style="background:rgba(255,255,255,.14);color:#fff" onclick="frMyQR()">Mi QR</button></div>`;
-  h+=fr.length?`<div class="frl">${fr.map(uid=>{const c=card(uid);return `<div class="frw setrow">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),38)}<div class="rn"><b>${nameHtml(c.n||'…',itemOf('color',c.c||'blanco'))}</b><small>Nivel ${c.l||1} · ${c.w===wk?c.p:0} pts esta semana</small></div><button class="btn b-pink" onclick="duelPick('${uid}')">Retar</button><button class="back" style="padding:6px 9px" onclick="frDel('${uid}')" aria-label="Quitar">✕</button></div>`}).join('')}</div>`:`<div class="setrow"><span>Aún no tienes amigos. Búscalos por su nombre o escanea su QR.</span></div>`;
+  if(SG.reqIn.length)h+=`<h3 class="ph">Solicitudes</h3><div class="frl">${SG.reqIn.map(r=>`<div class="frw setrow"><div class="rn"><b>${esc(r.fn)}</b><small>Quiere ser tu amigo</small></div><button class="btn b-lime" onclick="reqAnswer('${r.id}',true)">Aceptar</button><button class="back" style="padding:6px 9px" onclick="reqAnswer('${r.id}',false)" aria-label="Rechazar">✕</button></div>`).join('')}</div><h3 class="ph">Tus amigos</h3>`;
+  h+=fr.length?`<div class="frl">${fr.map(uid=>{const c=card(uid);return `<div class="frw setrow">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),38)}<div class="rn"><b>${nameHtml(c.n||'…',itemOf('color',c.c||'blanco'))}</b><small><span class="ondot ${isOn(c)?'on':''}"></span>${isOn(c)?'Conectado':'Desconectado'} · ${c.w===wk?c.p:0} pts</small></div>${activeWith(uid)?'<small style="opacity:.7">En duelo</small>':`<button class="btn b-pink" onclick="duelPick('${uid}')">Retar</button>`}<button class="back" style="padding:6px 9px" onclick="frDel('${uid}')" aria-label="Quitar">✕</button></div>`}).join('')}</div>`:`<div class="setrow"><span>Aún no tienes amigos. Búscalos por su nombre o escanea su QR.</span></div>`;
   const ds=SG.duels.slice(0,12);if(ds.length)h+=`<h3 class="ph">Duelos</h3><div class="dlist">${ds.map(duelRow).join('')}</div>`}
  const box=document.createElement('div');box.innerHTML=h;el.insertBefore(box,document.getElementById('histBox')||null)};
 // ranking global
@@ -2120,6 +2155,40 @@ const _rs=window.renderSett;window.renderSett=function(){_rs();const el=document
 // arrancar tras login
 const _cal=window.cgAfterLogin;window.cgAfterLogin=function(){_cal&&_cal();socialStart();let pf=null;try{pf=sessionStorage.getItem('amebPendingFriend');sessionStorage.removeItem('amebPendingFriend')}catch(e){}if(pf)frAdd(pf);pushPublic()};
 if(me())socialStart();
+})();
+</script>
+<script>
+(function(){
+const W=10,H=20,COL=['','#36d6ff','#3f6bff','#ff9b3d','#ffcf3d','#7cf06b','#b56bff','#ff5d6b'];
+const SH=[null,[[1,1,1,1]],[[2,0,0],[2,2,2]],[[0,0,3],[3,3,3]],[[4,4],[4,4]],[[0,5,5],[5,5,0]],[[0,6,0],[6,6,6]],[[7,7,0],[0,7,7]]];
+let B,cur,nxt,X,Y,sc,ln,lv,tm,acc,last,run=false,paused=false,over=false,bag=[];
+const cv=()=>document.getElementById('trCv');
+function piece(){if(!bag.length)bag=[1,2,3,4,5,6,7].sort(()=>Math.random()-.5);const t=bag.pop();return SH[t].map(r=>r.slice())}
+function hit(m,x,y){for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++)if(m[r][c]){const nx=x+c,ny=y+r;if(nx<0||nx>=W||ny>=H||(ny>=0&&B[ny][nx]))return true}return false}
+function rot(m){return m[0].map((_,i)=>m.map(r=>r[i]).reverse())}
+function spawn(){cur=nxt||piece();nxt=piece();X=Math.floor((W-cur[0].length)/2);Y=-1;if(hit(cur,X,Y+1)){end()}drawNext()}
+function merge(){cur.forEach((r,ry)=>r.forEach((v,cx)=>{if(v&&Y+ry>=0)B[Y+ry][X+cx]=v}));let n=0;for(let r=H-1;r>=0;r--){if(B[r].every(v=>v)){B.splice(r,1);B.unshift(Array(W).fill(0));n++;r++}}
+ if(n){sc+=[0,100,300,500,800][n]*lv;ln+=n;lv=1+Math.floor(ln/10);try{sfx(n>=4?'win':'ok');navigator.vibrate&&navigator.vibrate(30)}catch(e){}}else{try{sfx('tap')}catch(e){}}spawn();ui()}
+function drop(){if(!hit(cur,X,Y+1))Y++;else merge()}
+window.trAct=function(a){if(!run||paused||over)return;if(a==='L'&&!hit(cur,X-1,Y))X--;else if(a==='R'&&!hit(cur,X+1,Y))X++;else if(a==='D'){drop();sc+=1}else if(a==='U'){const r=rot(cur);for(const k of [0,-1,1,-2,2])if(!hit(r,X+k,Y)){cur=r;X+=k;break}}else if(a==='H'){let d=0;while(!hit(cur,X,Y+1)){Y++;d++}sc+=d*2;merge()}draw();ui()};
+function cell(g,x,y,s,v){g.fillStyle=COL[v];g.fillRect(x*s+1,y*s+1,s-2,s-2);g.fillStyle='rgba(255,255,255,.28)';g.fillRect(x*s+1,y*s+1,s-2,4);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x*s+1,y*s+s-5,s-2,4)}
+function draw(){const c=cv();if(!c)return;const g=c.getContext('2d'),s=20;g.clearRect(0,0,200,400);g.strokeStyle='rgba(255,255,255,.05)';for(let i=1;i<W;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,400);g.stroke()}
+ B.forEach((r,y)=>r.forEach((v,x)=>v&&cell(g,x,y,s,v)));if(cur&&!over){let gy=Y;while(!hit(cur,X,gy+1))gy++;g.globalAlpha=.22;cur.forEach((r,ry)=>r.forEach((v,cx)=>v&&gy+ry>=0&&cell(g,X+cx,gy+ry,s,v)));g.globalAlpha=1;cur.forEach((r,ry)=>r.forEach((v,cx)=>v&&Y+ry>=0&&cell(g,X+cx,Y+ry,s,v)))}
+ if(paused||over){g.fillStyle='rgba(0,0,0,.55)';g.fillRect(0,0,200,400);g.fillStyle='#fff';g.font='bold 20px sans-serif';g.textAlign='center';g.fillText(over?'FIN':'PAUSA',100,190);g.font='13px sans-serif';g.fillText(over?'Toca para jugar otra':'Toca para seguir',100,215)}}
+function drawNext(){const c=document.getElementById('trNx');if(!c)return;const g=c.getContext('2d');g.clearRect(0,0,80,80);const s=16,ox=(80-nxt[0].length*s)/2,oy=(80-nxt.length*s)/2;nxt.forEach((r,y)=>r.forEach((v,x)=>{if(v){g.save();g.translate(ox,oy);cell(g,x,y,s,v);g.restore()}}))}
+function ui(){const q=(i,v)=>{const e=document.getElementById(i);if(e)e.textContent=v};q('trSc',sc);q('trLn',ln);q('trLv',lv);q('trBest',Math.max(sc,(P0().g.tetris||{}).best||0))}
+function loop(t){if(!run)return;if(!paused&&!over){acc+=t-(last||t);const sp=Math.max(80,800-(lv-1)*70);while(acc>sp){acc-=sp;drop()}draw()}last=t;tm=requestAnimationFrame(loop)}
+window.trStart=function(){B=Array.from({length:H},()=>Array(W).fill(0));sc=0;ln=0;lv=1;acc=0;last=0;over=false;paused=false;nxt=null;bag=[];spawn();ui();run=true;cancelAnimationFrame(tm);tm=requestAnimationFrame(loop);const pb=document.getElementById('trPb');if(pb)pb.textContent='Pausa'};
+window.trStop=function(){run=false;cancelAnimationFrame(tm)};
+window.trPause=function(){if(over){trStart();return}paused=!paused;document.getElementById('trPb').textContent=paused?'Seguir':'Pausa';draw()};
+function end(){over=true;const p=P0();const st=p.g.tetris||{};const rec=sc>(st.best||0);st.best=Math.max(st.best||0,sc);st.played=(st.played||0)+1;p.g.tetris=st;const coins=Math.min(50,Math.floor(sc/200));p.coins=(p.coins||0)+coins;Psave(p);try{updHome()}catch(e){}
+ setTimeout(()=>modal(`<h3>${rec?'¡Nuevo récord!':'Fin de la partida'}</h3><div class="reveal" style="text-align:center"><b>${sc} puntos</b><br>${ln} líneas · nivel ${lv}${coins?`<br>+${coins} <i class="coin"></i>`:''}</div><div class="row"><button class="btn b-lime" onclick="closeM();trStart()">Otra partida</button><button class="back" onclick="closeM();trStop();go('home')">Salir</button></div>`),300)}
+document.addEventListener('keydown',e=>{const v=document.getElementById('tetris');if(!v||!v.classList.contains('on'))return;const k={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D',' ':'H',x:'U',X:'U'}[e.key];if(k){e.preventDefault();trAct(k)}if(e.key==='p'||e.key==='Escape')trPause()});
+let sx=0,sy=0,st0=0;document.addEventListener('pointerdown',e=>{if(e.target.id!=='trCv')return;sx=e.clientX;sy=e.clientY;st0=Date.now()});
+document.addEventListener('pointerup',e=>{if(e.target.id!=='trCv')return;if(over||paused){trPause();return}const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<12&&Math.abs(dy)<12){trAct('U');return}if(Math.abs(dx)>Math.abs(dy))trAct(dx>0?'R':'L');else trAct(dy>0?(Date.now()-st0<250&&dy>60?'H':'D'):'U')});
+GO.tetris="go('tetris');trStart()";GNAME.tetris='Tetris';
+const og=window.go;window.go=function(v){if(v!=='tetris'&&typeof trStop==='function')trStop();og(v)};
+try{updHome()}catch(e){}
 })();
 </script>
 </body>

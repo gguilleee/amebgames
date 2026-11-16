@@ -684,6 +684,26 @@ body:after{background-image:
   <div class="board" id="board"></div>
   <div class="kb" id="kb"></div>
 </section>
+<section id="tetris" class="view">
+ <div class="top"><button class="back" onclick="trStop();go('home')">← Inicio</button><div class="ttl">TETRIS</div><div style="width:70px"></div></div>
+ <div class="trwrap">
+  <canvas id="trCv" width="200" height="400"></canvas>
+  <div class="trside"><div class="trbox"><small>Puntos</small><b id="trSc">0</b></div><div class="trbox"><small>Líneas</small><b id="trLn">0</b></div><div class="trbox"><small>Nivel</small><b id="trLv">1</b></div><div class="trbox"><small>Siguiente</small><canvas id="trNx" width="80" height="80"></canvas></div><div class="trbox"><small>Récord</small><b id="trBest">0</b></div><button class="btn b-lime" style="padding:8px 10px!important" onclick="trPause()" id="trPb">Pausa</button></div>
+ </div>
+ <div class="trpad"><button onpointerdown="trAct('L')">◀</button><button onpointerdown="trAct('R')">▶</button><button onpointerdown="trAct('U')">⟳</button><button onpointerdown="trAct('D')">▼</button><button onpointerdown="trAct('H')">⤓</button></div>
+</section>
+<style>
+.trwrap{display:flex;gap:12px;justify-content:center;align-items:flex-start;margin-top:8px}
+#trCv{width:min(60vw,260px);aspect-ratio:1/2;height:auto;border-radius:12px;background:rgba(5,8,25,.75);border:1.5px solid rgba(255,255,255,.25);box-shadow:0 10px 30px rgba(0,0,0,.4);touch-action:none}
+.trside{display:flex;flex-direction:column;gap:8px;width:96px}
+.trbox{padding:8px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);text-align:center;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.trbox small{display:block;color:rgba(255,255,255,.7);font-size:11px}.trbox b{font-family:var(--fd);font-size:18px}
+#trNx{width:64px;height:64px}
+.trpad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:420px;margin:14px auto 0}
+.trpad button{height:56px;border-radius:14px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;font-size:22px;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.trpad button:active{background:rgba(255,255,255,.3)}
+@media(min-width:900px){.trpad{display:none}}
+</style>
 <section id="hang" class="view">
   <div class="top"><button class="back" onclick="go('home')">← Inicio</button><div class="ttl">AHORCADO</div><div style="width:70px"></div></div>
   <div class="hcat" id="hCat"></div>
@@ -1059,7 +1079,7 @@ function updHome(){const p=P0();const ids=Object.keys(GAMES);const d=dailyDone(p
  set('hFeat',next?`<button class="feat" style="--gc:${GC[next]}" onclick="${GO[next]}"><div><span class="kicker">Siguiente reto</span><b>${GAMES[next]}</b><span class="play">Jugar</span></div><span class="fimg" style="background-image:url(img/g-${next}.svg)"></span></button>`:`<div class="alldone">Has jugado todos los retos de hoy</div>`);
  const tile=(id,daily)=>{const dn=daily&&(p.g[id]||{}).last===today();return `<button class="tile2${dn?' done':''}" onclick="${GO[id]}" aria-label="${GNAME[id]}"><span class="timg" style="background-image:url(img/g-${id}.svg)"></span><span class="tname">${GNAME[id]}</span>${dn?'<span class="tok">✔</span>':''}</button>`};
  set('qRow',`<button class="qcard ${wheelDone()?'':'hot'}" onclick="openWheel()"><span class="qi">${miniWheel()}</span><span><b>Ruleta diaria</b><small>${wheelDone()?'Vuelve mañana':'Tirada gratis'}</small></span></button><button class="qcard" onclick="installInfo()"><span class="qi" style="background:var(--card2)">${ico('games',24)}</span><span><b>Instalar</b><small>Tenla como app</small></span></button>`);
- set('gDaily',ids.map(id=>tile(id,true)).join(''));set('gFree',['pasa','hang'].map(id=>tile(id,false)).join(''))}
+ set('gDaily',ids.map(id=>tile(id,true)).join(''));set('gFree',['pasa','hang','tetris'].map(id=>tile(id,false)).join(''))}
 
 // --- Grupos por código (sin servidor) ---
 // --- Invitaciones por enlace y QR ---
@@ -1801,7 +1821,7 @@ function updHome(){const p=P0();const ids=Object.keys(GAMES);const d=dailyDone(p
  const wc=wcState(p);Psave(p);
  set('wcBox',`<div class="shead2"><h3>Retos semanales</h3><span>Terminan en ${dh(msToWeek())}</span></div>`+wc.ids.map(cid=>{const c=WCH.find(x=>x.id===cid);const v=wc.prog[cid]||0,done=v>=c.n,cl=wc.claimed.includes(cid);return `<div class="wcc${done&&!cl?' ready':''}${cl?' cl':''}"><div class="wct"><b>${c.t}</b><div class="wcb"><i style="width:${v/c.n*100}%"></i></div><small>${Math.min(v,c.n)} / ${c.n}</small></div>${cl?`<span class="wcok">${ico('check',18)}</span>`:done?`<button class="wcbtn" onclick="claimWc('${cid}')">Recoger<br><i class="coin"></i>${c.r}</button>`:`<span class="wcr"><i class="coin"></i>${c.r}</span>`}</div>`}).join(''));
  const tile=(id,daily)=>{const dn=daily&&(p.g[id]||{}).last===today();return `<button class="tile2${dn?' done':''}" onclick="${GO[id]}" aria-label="${GNAME[id]}"><span class="timg" style="background-image:url(img/g-${id}.svg)"></span><span class="tname">${GNAME[id]}</span>${dn?'<span class="tok">✔</span>':''}</button>`};
- set('gDaily',ids.map(id=>tile(id,true)).join(''));set('gFree',['pasa','hang'].map(id=>tile(id,false)).join(''))}
+ set('gDaily',ids.map(id=>tile(id,true)).join(''));set('gFree',['pasa','hang','tetris'].map(id=>tile(id,false)).join(''))}
 function streakInfo(){const p=P0();const st=curStreak(p);const nx=Object.keys(STREAKMS).map(Number).find(k=>k>st);
  modal(`<h3>Tu racha</h3><div class="streakbig">${flame(88,(p.gs||{}).last===today())}<b>${st}</b><small>día${st===1?'':'s'} seguidos</small></div><p style="text-align:center;color:var(--mut);margin:6px 0 14px">Juega al menos un reto diario cada día para mantenerla. Se reinicia a las 8:00.</p>
  <div class="msrow">${Object.entries(STREAKMS).map(([k,v])=>`<div class="${st>=k?'ok':''}"><b>${k}</b><small>días</small><span><i class="coin"></i>${v}</span></div>`).join('')}</div>
@@ -1928,6 +1948,40 @@ function histHtml(p){const days=p.days||{},wins=p.wins||{};const now=shiftedNow(
  <div class="setrow" style="display:block"><div class="hwd"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class="hcal">${cells.join('')}</div></div>
  <h3 class="ph">Partidas por juego</h3><div class="setrow" style="display:block"><div class="hbars">${ids.map(id=>{const s=p.g[id]||{};const pl=s.played||0,w=s.wins||0;return `<div class="hbar"><b>${GAMES[id]}</b><div class="t"><b style="width:${pl/mx*100}%"></b><b class="w" style="width:${w/mx*100}%"></b></div><span>${w}/${pl}</span></div>`}).join('')}</div><small style="color:rgba(255,255,255,.6);display:block;margin-top:8px">Verde: ganadas · Azul: jugadas</small></div>`}
 (function(){const _rp=window.renderProf;window.renderProf=function(){_rp();const el=document.getElementById('profBody');const p=P0();const h=document.createElement('div');h.id='histBox';h.innerHTML=histHtml(p);const best=[...el.querySelectorAll('.ph')].find(x=>x.textContent.startsWith('Mejores'));if(best)el.insertBefore(h,best);else el.appendChild(h);if(window.socialHook)socialHook(el)}})();
+</script>
+<script>
+(function(){
+const W=10,H=20,COL=['','#36d6ff','#3f6bff','#ff9b3d','#ffcf3d','#7cf06b','#b56bff','#ff5d6b'];
+const SH=[null,[[1,1,1,1]],[[2,0,0],[2,2,2]],[[0,0,3],[3,3,3]],[[4,4],[4,4]],[[0,5,5],[5,5,0]],[[0,6,0],[6,6,6]],[[7,7,0],[0,7,7]]];
+let B,cur,nxt,X,Y,sc,ln,lv,tm,acc,last,run=false,paused=false,over=false,bag=[];
+const cv=()=>document.getElementById('trCv');
+function piece(){if(!bag.length)bag=[1,2,3,4,5,6,7].sort(()=>Math.random()-.5);const t=bag.pop();return SH[t].map(r=>r.slice())}
+function hit(m,x,y){for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++)if(m[r][c]){const nx=x+c,ny=y+r;if(nx<0||nx>=W||ny>=H||(ny>=0&&B[ny][nx]))return true}return false}
+function rot(m){return m[0].map((_,i)=>m.map(r=>r[i]).reverse())}
+function spawn(){cur=nxt||piece();nxt=piece();X=Math.floor((W-cur[0].length)/2);Y=-1;if(hit(cur,X,Y+1)){end()}drawNext()}
+function merge(){cur.forEach((r,ry)=>r.forEach((v,cx)=>{if(v&&Y+ry>=0)B[Y+ry][X+cx]=v}));let n=0;for(let r=H-1;r>=0;r--){if(B[r].every(v=>v)){B.splice(r,1);B.unshift(Array(W).fill(0));n++;r++}}
+ if(n){sc+=[0,100,300,500,800][n]*lv;ln+=n;lv=1+Math.floor(ln/10);try{sfx(n>=4?'win':'ok');navigator.vibrate&&navigator.vibrate(30)}catch(e){}}else{try{sfx('tap')}catch(e){}}spawn();ui()}
+function drop(){if(!hit(cur,X,Y+1))Y++;else merge()}
+window.trAct=function(a){if(!run||paused||over)return;if(a==='L'&&!hit(cur,X-1,Y))X--;else if(a==='R'&&!hit(cur,X+1,Y))X++;else if(a==='D'){drop();sc+=1}else if(a==='U'){const r=rot(cur);for(const k of [0,-1,1,-2,2])if(!hit(r,X+k,Y)){cur=r;X+=k;break}}else if(a==='H'){let d=0;while(!hit(cur,X,Y+1)){Y++;d++}sc+=d*2;merge()}draw();ui()};
+function cell(g,x,y,s,v){g.fillStyle=COL[v];g.fillRect(x*s+1,y*s+1,s-2,s-2);g.fillStyle='rgba(255,255,255,.28)';g.fillRect(x*s+1,y*s+1,s-2,4);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x*s+1,y*s+s-5,s-2,4)}
+function draw(){const c=cv();if(!c)return;const g=c.getContext('2d'),s=20;g.clearRect(0,0,200,400);g.strokeStyle='rgba(255,255,255,.05)';for(let i=1;i<W;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,400);g.stroke()}
+ B.forEach((r,y)=>r.forEach((v,x)=>v&&cell(g,x,y,s,v)));if(cur&&!over){let gy=Y;while(!hit(cur,X,gy+1))gy++;g.globalAlpha=.22;cur.forEach((r,ry)=>r.forEach((v,cx)=>v&&gy+ry>=0&&cell(g,X+cx,gy+ry,s,v)));g.globalAlpha=1;cur.forEach((r,ry)=>r.forEach((v,cx)=>v&&Y+ry>=0&&cell(g,X+cx,Y+ry,s,v)))}
+ if(paused||over){g.fillStyle='rgba(0,0,0,.55)';g.fillRect(0,0,200,400);g.fillStyle='#fff';g.font='bold 20px sans-serif';g.textAlign='center';g.fillText(over?'FIN':'PAUSA',100,190);g.font='13px sans-serif';g.fillText(over?'Toca para jugar otra':'Toca para seguir',100,215)}}
+function drawNext(){const c=document.getElementById('trNx');if(!c)return;const g=c.getContext('2d');g.clearRect(0,0,80,80);const s=16,ox=(80-nxt[0].length*s)/2,oy=(80-nxt.length*s)/2;nxt.forEach((r,y)=>r.forEach((v,x)=>{if(v){g.save();g.translate(ox,oy);cell(g,x,y,s,v);g.restore()}}))}
+function ui(){const q=(i,v)=>{const e=document.getElementById(i);if(e)e.textContent=v};q('trSc',sc);q('trLn',ln);q('trLv',lv);q('trBest',Math.max(sc,(P0().g.tetris||{}).best||0))}
+function loop(t){if(!run)return;if(!paused&&!over){acc+=t-(last||t);const sp=Math.max(80,800-(lv-1)*70);while(acc>sp){acc-=sp;drop()}draw()}last=t;tm=requestAnimationFrame(loop)}
+window.trStart=function(){B=Array.from({length:H},()=>Array(W).fill(0));sc=0;ln=0;lv=1;acc=0;last=0;over=false;paused=false;nxt=null;bag=[];spawn();ui();run=true;cancelAnimationFrame(tm);tm=requestAnimationFrame(loop);const pb=document.getElementById('trPb');if(pb)pb.textContent='Pausa'};
+window.trStop=function(){run=false;cancelAnimationFrame(tm)};
+window.trPause=function(){if(over){trStart();return}paused=!paused;document.getElementById('trPb').textContent=paused?'Seguir':'Pausa';draw()};
+function end(){over=true;const p=P0();const st=p.g.tetris||{};const rec=sc>(st.best||0);st.best=Math.max(st.best||0,sc);st.played=(st.played||0)+1;p.g.tetris=st;const coins=Math.min(50,Math.floor(sc/200));p.coins=(p.coins||0)+coins;Psave(p);try{updHome()}catch(e){}
+ setTimeout(()=>modal(`<h3>${rec?'¡Nuevo récord!':'Fin de la partida'}</h3><div class="reveal" style="text-align:center"><b>${sc} puntos</b><br>${ln} líneas · nivel ${lv}${coins?`<br>+${coins} <i class="coin"></i>`:''}</div><div class="row"><button class="btn b-lime" onclick="closeM();trStart()">Otra partida</button><button class="back" onclick="closeM();trStop();go('home')">Salir</button></div>`),300)}
+document.addEventListener('keydown',e=>{const v=document.getElementById('tetris');if(!v||!v.classList.contains('on'))return;const k={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D',' ':'H',x:'U',X:'U'}[e.key];if(k){e.preventDefault();trAct(k)}if(e.key==='p'||e.key==='Escape')trPause()});
+let sx=0,sy=0,st0=0;document.addEventListener('pointerdown',e=>{if(e.target.id!=='trCv')return;sx=e.clientX;sy=e.clientY;st0=Date.now()});
+document.addEventListener('pointerup',e=>{if(e.target.id!=='trCv')return;if(over||paused){trPause();return}const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<12&&Math.abs(dy)<12){trAct('U');return}if(Math.abs(dx)>Math.abs(dy))trAct(dx>0?'R':'L');else trAct(dy>0?(Date.now()-st0<250&&dy>60?'H':'D'):'U')});
+GO.tetris="go('tetris');trStart()";GNAME.tetris='Tetris';
+const og=window.go;window.go=function(v){if(v!=='tetris'&&typeof trStop==='function')trStop();og(v)};
+try{updHome()}catch(e){}
+})();
 </script>
 </body>
 </html>

@@ -19,7 +19,19 @@ service cloud.firestore {
         (request.auth.uid == resource.data.a && resource.data.as == null
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['as']))
         || (request.auth.uid == resource.data.b && resource.data.bs == null
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bs'])));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bs']))
+        || (request.auth.uid == resource.data.b && resource.data.bs == null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rej'])));
+    }
+    // Solicitudes de amistad (id = from_to)
+    match /freq/{id} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+      allow create: if request.auth != null && request.resource.data.from == request.auth.uid
+                    && id == request.auth.uid + '_' + request.resource.data.to
+                    && request.resource.data.st == 'p';
+      allow update: if request.auth != null && request.auth.uid == resource.data.to
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st','tn']);
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
     }
     // Grupos: cualquiera con sesión puede leer, crear y unirse/salir (solo cambiando "members")
     match /groups/{code} {
