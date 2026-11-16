@@ -33,6 +33,10 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st','tn']);
       allow delete: if request.auth != null && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
     }
+    // Códigos de un solo uso: solo se puede crear la marca una vez
+    match /codesUsed/{h} {
+      allow create: if request.auth != null && request.resource.data.by == request.auth.uid;
+    }
     // Grupos: cualquiera con sesión puede leer, crear y unirse/salir (solo cambiando "members")
     match /groups/{code} {
       allow read: if request.auth != null;

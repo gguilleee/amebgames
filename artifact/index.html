@@ -1938,6 +1938,7 @@ function grJoinGo(){const v=(document.getElementById('grJoinIn').value||'').trim
 .hsum{display:flex;gap:10px;margin:6px 0 10px;flex-wrap:wrap}.hsum div{flex:1;min-width:90px;padding:10px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);text-align:center}.hsum b{display:block;font-size:20px}.hsum small{color:rgba(255,255,255,.65)}
 </style>
 <script>
+window.histOpen=function(){modal(`<div style="max-height:72vh;overflow:auto">${histHtml(P0())}</div><div class="row" style="margin-top:10px"><button class="back" onclick="closeM()">Cerrar</button></div>`)};
 function histHtml(p){const days=p.days||{},wins=p.wins||{};const now=shiftedNow();const td=today();
  const cells=[];const start=new Date(now);start.setDate(start.getDate()-34);const off=(start.getDay()+6)%7;start.setDate(start.getDate()-off);
  let played=0,act=0;const end=new Date(now);
@@ -1947,7 +1948,7 @@ function histHtml(p){const days=p.days||{},wins=p.wins||{};const now=shiftedNow(
  return `<h3 class="ph">Tu historial</h3><div class="hsum"><div><b>${act}</b><small>días activos</small></div><div><b>${played}</b><small>retos jugados</small></div><div><b>${(p.gs||{}).best||0}</b><small>mejor racha</small></div></div>
  <div class="setrow" style="display:block"><div class="hwd"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class="hcal">${cells.join('')}</div></div>
  <h3 class="ph">Partidas por juego</h3><div class="setrow" style="display:block"><div class="hbars">${ids.map(id=>{const s=p.g[id]||{};const pl=s.played||0,w=s.wins||0;return `<div class="hbar"><b>${GAMES[id]}</b><div class="t"><b style="width:${pl/mx*100}%"></b><b class="w" style="width:${w/mx*100}%"></b></div><span>${w}/${pl}</span></div>`}).join('')}</div><small style="color:rgba(255,255,255,.6);display:block;margin-top:8px">Verde: ganadas · Azul: jugadas</small></div>`}
-(function(){const _rp=window.renderProf;window.renderProf=function(){_rp();const el=document.getElementById('profBody');const p=P0();const h=document.createElement('div');h.id='histBox';h.innerHTML=histHtml(p);const best=[...el.querySelectorAll('.ph')].find(x=>x.textContent.startsWith('Mejores'));if(best)el.insertBefore(h,best);else el.appendChild(h);if(window.socialHook)socialHook(el)}})();
+(function(){const _rp=window.renderProf;window.renderProf=function(){_rp();const el=document.getElementById('profBody');const p=P0();const h=document.createElement('div');h.id='histBox';h.innerHTML=(()=>{const d=p.days||{};const act=Object.keys(d).filter(k=>(d[k]||[]).length).length;const tot=Object.values(d).reduce((x,v)=>x+(v||[]).length,0);return `<button class="setrow hmini" onclick="histOpen()" style="width:100%;cursor:pointer;color:#fff;margin:14px 0 4px"><span>📅 <b>${act}</b> días activos · <b>${tot}</b> retos</span><span style="opacity:.7">Ver historial ›</span></button>`})();const best=[...el.querySelectorAll('.ph')].find(x=>x.textContent.startsWith('Mejores'));if(best)el.insertBefore(h,best);else el.appendChild(h);if(window.socialHook)socialHook(el)}})();
 </script>
 <script>
 (function(){

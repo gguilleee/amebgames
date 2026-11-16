@@ -2039,6 +2039,7 @@ function grJoinGo(){const v=(document.getElementById('grJoinIn').value||'').trim
 .hsum{display:flex;gap:10px;margin:6px 0 10px;flex-wrap:wrap}.hsum div{flex:1;min-width:90px;padding:10px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);text-align:center}.hsum b{display:block;font-size:20px}.hsum small{color:rgba(255,255,255,.65)}
 </style>
 <script>
+window.histOpen=function(){modal(`<div style="max-height:72vh;overflow:auto">${histHtml(P0())}</div><div class="row" style="margin-top:10px"><button class="back" onclick="closeM()">Cerrar</button></div>`)};
 function histHtml(p){const days=p.days||{},wins=p.wins||{};const now=shiftedNow();const td=today();
  const cells=[];const start=new Date(now);start.setDate(start.getDate()-34);const off=(start.getDay()+6)%7;start.setDate(start.getDate()-off);
  let played=0,act=0;const end=new Date(now);
@@ -2048,7 +2049,7 @@ function histHtml(p){const days=p.days||{},wins=p.wins||{};const now=shiftedNow(
  return `<h3 class="ph">Tu historial</h3><div class="hsum"><div><b>${act}</b><small>días activos</small></div><div><b>${played}</b><small>retos jugados</small></div><div><b>${(p.gs||{}).best||0}</b><small>mejor racha</small></div></div>
  <div class="setrow" style="display:block"><div class="hwd"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class="hcal">${cells.join('')}</div></div>
  <h3 class="ph">Partidas por juego</h3><div class="setrow" style="display:block"><div class="hbars">${ids.map(id=>{const s=p.g[id]||{};const pl=s.played||0,w=s.wins||0;return `<div class="hbar"><b>${GAMES[id]}</b><div class="t"><b style="width:${pl/mx*100}%"></b><b class="w" style="width:${w/mx*100}%"></b></div><span>${w}/${pl}</span></div>`}).join('')}</div><small style="color:rgba(255,255,255,.6);display:block;margin-top:8px">Verde: ganadas · Azul: jugadas</small></div>`}
-(function(){const _rp=window.renderProf;window.renderProf=function(){_rp();const el=document.getElementById('profBody');const p=P0();const h=document.createElement('div');h.id='histBox';h.innerHTML=histHtml(p);const best=[...el.querySelectorAll('.ph')].find(x=>x.textContent.startsWith('Mejores'));if(best)el.insertBefore(h,best);else el.appendChild(h);if(window.socialHook)socialHook(el)}})();
+(function(){const _rp=window.renderProf;window.renderProf=function(){_rp();const el=document.getElementById('profBody');const p=P0();const h=document.createElement('div');h.id='histBox';h.innerHTML=(()=>{const d=p.days||{};const act=Object.keys(d).filter(k=>(d[k]||[]).length).length;const tot=Object.values(d).reduce((x,v)=>x+(v||[]).length,0);return `<button class="setrow hmini" onclick="histOpen()" style="width:100%;cursor:pointer;color:#fff;margin:14px 0 4px"><span>📅 <b>${act}</b> días activos · <b>${tot}</b> retos</span><span style="opacity:.7">Ver historial ›</span></button>`})();const best=[...el.querySelectorAll('.ph')].find(x=>x.textContent.startsWith('Mejores'));if(best)el.insertBefore(h,best);else el.appendChild(h);if(window.socialHook)socialHook(el)}})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <style>
@@ -2142,10 +2143,10 @@ function duelRow(d){const mineA=d.a===me();const rival=mineA?d.bn:d.an;const min
  const cls=d.rej||mine==null||his==null?'':mine>his?'won':mine<his?'lost':'';
  return `<div class="duel setrow ${cls}"><div class="dv"><b>vs ${esc(rival)} · ${DGAMES[d.g]}</b><small>${st}</small></div>${mine!=null?`<span class="dsc">${mine}${his!=null?' – '+his:''}</span>`:''}${act}</div>`}
 window.socialHook=function(el){const fr=friendsOf();const wk=weekKey();
- let h=`<h3 class="ph">Amigos</h3>`;
+ let h=`<h3 class="ph">Amigos${me()?' ('+fr.length+')':''}</h3>`;const miss=fr.filter(u=>!SG.cards[u]);if(miss.length&&!SG.fetching){SG.fetching=1;Promise.all(miss.map(u=>FB.db.collection('players').doc(u).get().then(d=>{if(d.exists)SG.cards[u]=d.data()}).catch(()=>{}))).then(()=>{SG.fetching=0;refreshSocial()})}
  if(!me())h+=`<div class="setrow"><span>Inicia sesión con Google para añadir amigos y retarles</span></div>`;
  else{h+=`<div class="grow" style="margin-bottom:8px"><button class="btn b-lime" onclick="frAddModal()">+ Añadir amigo</button><button class="btn" style="background:rgba(255,255,255,.14);color:#fff" onclick="frMyQR()">Mi QR</button></div>`;
-  if(SG.reqIn.length)h+=`<h3 class="ph">Solicitudes</h3><div class="frl">${SG.reqIn.map(r=>`<div class="frw setrow"><div class="rn"><b>${esc(r.fn)}</b><small>Quiere ser tu amigo</small></div><button class="btn b-lime" onclick="reqAnswer('${r.id}',true)">Aceptar</button><button class="back" style="padding:6px 9px" onclick="reqAnswer('${r.id}',false)" aria-label="Rechazar">✕</button></div>`).join('')}</div><h3 class="ph">Tus amigos</h3>`;
+  if(SG.reqIn.length)h+=`<h3 class="ph">Solicitudes</h3><div class="frl">${SG.reqIn.map(r=>`<div class="frw setrow"><div class="rn"><b>${esc(r.fn)}</b><small>Quiere ser tu amigo</small></div><button class="btn b-lime" onclick="reqAnswer('${r.id}',true)">Aceptar</button><button class="back" style="padding:6px 9px" onclick="reqAnswer('${r.id}',false)" aria-label="Rechazar">✕</button></div>`).join('')}</div><h3 class="ph" style="font-size:13px!important;opacity:.8">Tus amigos</h3>`;
   h+=fr.length?`<div class="frl">${fr.map(uid=>{const c=card(uid);return `<div class="frw setrow">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),38)}<div class="rn"><b>${nameHtml(c.n||'…',itemOf('color',c.c||'blanco'))}</b><small><span class="ondot ${isOn(c)?'on':''}"></span>${isOn(c)?'Conectado':'Desconectado'} · ${c.w===wk?c.p:0} pts</small></div>${activeWith(uid)?'<small style="opacity:.7">En duelo</small>':`<button class="btn b-pink" onclick="duelPick('${uid}')">Retar</button>`}<button class="back" style="padding:6px 9px" onclick="frDel('${uid}')" aria-label="Quitar">✕</button></div>`}).join('')}</div>`:`<div class="setrow"><span>Aún no tienes amigos. Búscalos por su nombre o escanea su QR.</span></div>`;
   const fin=d=>d.rej||(d.as!=null&&d.bs!=null);const act=SG.duels.filter(d=>!fin(d));const done=SG.duels.filter(fin).sort((x,y)=>(y.t||0)-(x.t||0)).slice(0,10);
   if(act.length)h+=`<h3 class="ph">Duelos en curso</h3><div class="dlist">${act.map(duelRow).join('')}</div>`;
@@ -2218,6 +2219,19 @@ body.trOn .bnav{display:none!important}
   b.addEventListener('pointerdown',e=>{e.preventDefault();stop();trAct(a);try{navigator.vibrate&&navigator.vibrate(8)}catch(_){}if(a==='L'||a==='R'||a==='D')del=setTimeout(()=>rep=setInterval(()=>trAct(a),a==='D'?50:90),220)});
   ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));b.addEventListener('contextmenu',e=>e.preventDefault())});
  const og=window.go;window.go=function(v){og(v);document.body.classList.toggle('trOn',v==='tetris')};
+})();
+</script>
+<script>
+(function(){
+const ONCE='5140e6a825bc96d1e8511459de946709a4d4ab1ca4c594cbc154603cb9eb197b';
+REDEEM[ONCE]={...REDEEM['dbe4410c2fa72c6fd71b2563a200dbb7f8eb15df23943e8cdd4b10796b0f32eb'],t:'Pase total',once:true};
+const _r=window.redeem;
+window.redeem=async function(){const i=document.getElementById('rcode');const c=(i.value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');let h='';try{h=await sha('amebsalt2:'+c)}catch(e){}
+ const r=REDEEM[h];if(!r||!r.once)return _r();
+ const p=P0();if((p.redeemed||[]).includes(h)){toast('Ya has canjeado este código');return}
+ if(typeof FB==='undefined'||!FB||!FBUSER){toast('Inicia sesión con Google para canjear este código');if(typeof maybeShowLogin==='function')maybeShowLogin();return}
+ try{await FB.db.collection('codesUsed').doc(h).set({by:FBUSER.uid,t:Date.now()})}catch(e){sfx('ko');toast('Este código ya se ha usado');return}
+ return _r()};
 })();
 </script>
 </body>
