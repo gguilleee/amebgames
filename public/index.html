@@ -2083,7 +2083,7 @@ function beat(){if(!me()||document.hidden)return;HB=Date.now();FB.db.collection(
 setInterval(()=>{beat();refreshSocial()},60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});
 const isOn=c=>c&&c.on&&Date.now()-c.on<150000;
 const me=()=>FBUSER&&FBUSER.uid;
-const needLogin=()=>{if(me())return false;toast('Inicia sesión con Google para usar amigos y duelos');if(typeof maybeShowLogin==='function')maybeShowLogin();return true};
+const needLogin=()=>{if(me())return false;toast('Inicia sesión o entra como invitado para usar amigos y duelos');if(typeof maybeShowLogin==='function')maybeShowLogin();return true};
 function friendsOf(){const p=P0();return p.fr||[]}
 function setFriends(a){const p=P0();p.fr=[...new Set(a)].filter(x=>x&&x!==me());Psave(p)}
 function card(uid){return SG.cards[uid]||{n:'…',l:1}}
@@ -2144,10 +2144,10 @@ function duelRow(d){const mineA=d.a===me();const rival=mineA?d.bn:d.an;const min
  return `<div class="duel setrow ${cls}"><div class="dv"><b>vs ${esc(rival)} · ${DGAMES[d.g]}</b><small>${st}</small></div>${mine!=null?`<span class="dsc">${mine}${his!=null?' – '+his:''}</span>`:''}${act}</div>`}
 window.socialHook=function(el){const fr=friendsOf();const wk=weekKey();
  let h=`<h3 class="ph">Amigos${me()?' ('+fr.length+')':''}</h3>`;const miss=fr.filter(u=>!SG.cards[u]);if(miss.length&&!SG.fetching){SG.fetching=1;Promise.all(miss.map(u=>FB.db.collection('players').doc(u).get().then(d=>{if(d.exists)SG.cards[u]=d.data()}).catch(()=>{}))).then(()=>{SG.fetching=0;refreshSocial()})}
- if(!me())h+=`<div class="setrow"><span>Inicia sesión con Google para añadir amigos y retarles</span></div>`;
+ if(!me())h+=`<div class="setrow"><span>Inicia sesión (o juega como invitado) para añadir amigos y retarles</span></div>`;
  else{h+=`<div class="grow" style="margin-bottom:8px"><button class="btn b-lime" onclick="frAddModal()">+ Añadir amigo</button><button class="btn" style="background:rgba(255,255,255,.14);color:#fff" onclick="frMyQR()">Mi QR</button></div>`;
   if(SG.reqIn.length)h+=`<h3 class="ph">Solicitudes</h3><div class="frl">${SG.reqIn.map(r=>`<div class="frw setrow"><div class="rn"><b>${esc(r.fn)}</b><small>Quiere ser tu amigo</small></div><button class="btn b-lime" onclick="reqAnswer('${r.id}',true)">Aceptar</button><button class="back" style="padding:6px 9px" onclick="reqAnswer('${r.id}',false)" aria-label="Rechazar">✕</button></div>`).join('')}</div><h3 class="ph" style="font-size:13px!important;opacity:.8">Tus amigos</h3>`;
-  h+=fr.length?`<div class="frl">${fr.map(uid=>{const c=card(uid);return `<div class="frw setrow">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),38)}<div class="rn"><b>${nameHtml(c.n||'…',itemOf('color',c.c||'blanco'))}</b><small><span class="ondot ${isOn(c)?'on':''}"></span>${isOn(c)?'Conectado':'Desconectado'} · ${c.w===wk?c.p:0} pts</small></div>${activeWith(uid)?'<small style="opacity:.7">En duelo</small>':`<button class="btn b-pink" onclick="duelPick('${uid}')">Retar</button>`}<button class="back" style="padding:6px 9px" onclick="frDel('${uid}')" aria-label="Quitar">✕</button></div>`}).join('')}</div>`:`<div class="setrow"><span>Aún no tienes amigos. Búscalos por su nombre o escanea su QR.</span></div>`;
+  h+=fr.length?`<div class="frl">${fr.map(uid=>{const c=card(uid);return `<div class="frw setrow tap" onclick="if(event.target.closest('button'))return;frOpen('${uid}','${esc(c.n||'Jugador').replace(/'/g,'')}',${isOn(c)?1:0},${c.l||1},${c.w===wk?c.p:0},${activeWith(uid)?1:0})">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),38)}<div class="rn"><b>${nameHtml(c.n||'…',itemOf('color',c.c||'blanco'))}</b><small><span class="ondot ${isOn(c)?'on':''}"></span>${isOn(c)?'Conectado':'Desconectado'} · ${c.w===wk?c.p:0} pts</small></div>${activeWith(uid)?'<small style="opacity:.7">En duelo</small>':`<button class="btn b-pink" onclick="duelPick('${uid}')">Retar</button>`}</div>`}).join('')}</div>`:`<div class="setrow"><span>Aún no tienes amigos. Búscalos por su nombre o escanea su QR.</span></div>`;
   const fin=d=>d.rej||(d.as!=null&&d.bs!=null);const act=SG.duels.filter(d=>!fin(d));const done=SG.duels.filter(fin).sort((x,y)=>(y.t||0)-(x.t||0)).slice(0,10);
   if(act.length)h+=`<h3 class="ph">Duelos en curso</h3><div class="dlist">${act.map(duelRow).join('')}</div>`;
   if(done.length){let w=0,l=0,e=0;SG.duels.filter(d=>!d.rej&&d.as!=null&&d.bs!=null).forEach(d=>{const m=d.a===me()?d.as:d.bs,o=d.a===me()?d.bs:d.as;m>o?w++:m<o?l++:e++});
@@ -2271,6 +2271,39 @@ window.showHelp=function(v,auto){const h=HELP[v];if(!h)return;
  modal(`<h3>Cómo jugar · ${h[0]}</h3><div class="hgoal">${h[1]}</div><ul class="hlist">${h[2].map((t,i)=>`<li><b class="n">${i+1}</b><span>${t}</span></li>`).join('')}</ul><div class="row" style="margin-top:12px"><button class="btn b-lime" onclick="helpOk('${v}',${!!auto})">¡Entendido!</button></div>`)};
 document.querySelectorAll('section.view').forEach(sec=>{if(!HELP[sec.id])return;const top=sec.querySelector('.top');if(!top)return;const ph=[...top.children].pop();const b=document.createElement('button');b.className='hbtn';b.textContent='?';b.setAttribute('aria-label','Cómo jugar');b.onclick=()=>showHelp(sec.id);if(ph&&ph.tagName==='DIV'&&!ph.textContent.trim()){ph.style.cssText='width:70px;display:flex;justify-content:flex-end';ph.appendChild(b)}else top.appendChild(b)});
 const og=window.go;window.go=function(v){og(v);if(!HELP[v])return;let s={};try{s=JSON.parse(localStorage.getItem('amebHelp')||'{}')}catch(e){}if(s[v])return;s[v]=1;try{localStorage.setItem('amebHelp',JSON.stringify(s))}catch(e){}if(v==='tetris')try{trStop()}catch(e){}setTimeout(()=>showHelp(v,true),250)};
+})();
+</script>
+<style>
+.acct{display:flex;align-items:center;gap:12px;padding:12px 14px;margin:14px 0 4px}
+.acct .ai{flex:1;min-width:0}.acct .ai b{display:block}.acct .ai small{color:rgba(255,255,255,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.acct .btn{padding:9px 14px!important;font-size:13px}
+.frw.tap{cursor:pointer}.frw.tap:active{transform:scale(.99)}
+.frm{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 12px}
+</style>
+<script>
+(function(){
+if(typeof FB==='undefined')return;
+const isAnon=()=>FBUSER&&FBUSER.isAnonymous;
+// jugar sin cuenta = cuenta invitada (anónima) para poder tener amigos y duelos
+function anonIn(){if(!FB||FBUSER)return;FB.auth.signInAnonymously().catch(e=>{console.warn('anon',e&&e.code)})}
+const _msl=window.maybeShowLogin;window.maybeShowLogin=function(){let skip=false;try{skip=sessionStorage.getItem('amebNoLogin')||localStorage.getItem('amebGuest')}catch(e){}if(skip&&!window._forceLogin){anonIn();return}window._forceLogin=false;_msl()};
+const _hl=window.hideLogin;window.hideLogin=function(){_hl();try{if(sessionStorage.getItem('amebNoLogin')){localStorage.setItem('amebGuest','1');anonIn()}}catch(e){}};
+// iniciar sesión: si eres invitado, se conserva tu progreso y amigos
+const _gl=window.googleLogin;window.googleLogin=async function(){if(!FB){toast('Las cuentas aún no están configuradas');return}
+ if(!isAnon())return _gl();const pr=new firebase.auth.GoogleAuthProvider();pr.setCustomParameters({prompt:'select_account'});
+ try{await FBUSER.linkWithPopup(pr);await FBUSER.reload();FBUSER=FB.auth.currentUser;try{localStorage.removeItem('amebGuest')}catch(e){}toast('¡Cuenta creada! Tu progreso se ha guardado');pushCloud(true);pushPublic();renderProf()}
+ catch(e){if(e&&e.code==='auth/credential-already-in-use'&&e.credential){try{localStorage.removeItem('amebGuest')}catch(_){}await FB.auth.signInWithCredential(e.credential);toast('Sesión iniciada')}
+  else if(e&&(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'))FBUSER.linkWithRedirect(pr);else if(e&&e.code!=='auth/popup-closed-by-user')toast('No se pudo iniciar sesión')}};
+window.acctLogout=function(){modal(`<h3>Cerrar sesión</h3><div class="reveal" style="text-align:center">${isAnon()?'Estás jugando como invitado: si cierras sesión <b>perderás tu progreso y tus amigos</b>. Mejor regístrate con Google antes.':'Tu progreso está guardado en tu cuenta de Google. Podrás volver a entrar cuando quieras.'}</div><div class="row"><button class="btn b-pink" onclick="closeM();try{localStorage.removeItem('amebGuest');sessionStorage.removeItem('amebNoLogin')}catch(e){};logout()">Cerrar sesión</button><button class="back" onclick="closeM()">Cancelar</button></div>`)};
+window.acctLogin=function(){try{sessionStorage.removeItem('amebNoLogin')}catch(e){}googleLogin()};
+function acctHtml(){if(!FB)return '';const u=FBUSER;
+ if(!u)return `<div class="setrow acct"><div class="ai"><b>Sin sesión</b><small>Entra para guardar tu progreso y jugar con amigos</small></div><button class="btn b-lime" onclick="acctLogin()">Iniciar sesión</button></div>`;
+ if(u.isAnonymous)return `<div class="setrow acct"><div class="ai"><b>Invitado</b><small>Regístrate para no perder tu progreso</small></div><button class="btn b-lime" onclick="acctLogin()">Registrarse</button><button class="back" style="padding:8px 10px" onclick="acctLogout()">Salir</button></div>`;
+ return `<div class="setrow acct"><div class="ai"><b>${esc(u.displayName||'Cuenta de Google')}</b><small>${esc(u.email||'')}</small></div><button class="back" onclick="acctLogout()">Cerrar sesión</button></div>`}
+const _rp=window.renderProf;window.renderProf=function(){_rp();const el=document.getElementById('profBody');if(!el)return;const d=document.createElement('div');d.innerHTML=acctHtml();const ed=[...el.querySelectorAll('button')].find(b=>b.textContent.trim()==='Editar perfil');const anchor=ed?ed.closest('.grow'):null;if(anchor)anchor.after(d);else el.prepend(d)};
+// ficha de amigo
+window.frOpen=function(uid,name,on,lvl,pts,inDuel){modal(`<h3>${esc(name)}</h3><div class="frm"><small><span class="ondot ${on?'on':''}"></span>${on?'Conectado':'Desconectado'} · Nivel ${lvl} · ${pts} pts esta semana</small></div><div class="row">${inDuel?'<button class="btn" disabled style="opacity:.6">Duelo en curso</button>':`<button class="btn b-lime" onclick="closeM();duelPick('${uid}')">Retar a un duelo</button>`}</div><div class="row" style="margin-top:8px"><button class="back" onclick="frDelAsk('${uid}','${esc(name).replace(/'/g,'')}')">Eliminar amigo</button><button class="back" onclick="closeM()">Cerrar</button></div>`)};
+window.frDelAsk=function(uid,name){modal(`<h3>¿Eliminar a ${name}?</h3><div class="reveal" style="text-align:center">Dejará de aparecer en tu lista de amigos. Podrás volver a añadirle cuando quieras.</div><div class="row"><button class="btn b-pink" onclick="closeM();frDel('${uid}');toast('Amigo eliminado')">Eliminar</button><button class="back" onclick="closeM()">Cancelar</button></div>`)};
 })();
 </script>
 </body>
