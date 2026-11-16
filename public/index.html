@@ -2067,6 +2067,8 @@ function histHtml(p){const days=p.days||{},wins=p.wins||{};const now=shiftedNow(
 #qrVid{width:100%;border-radius:14px;background:#000;aspect-ratio:1;object-fit:cover}
 .grank .rk.me{outline:2px solid #ffc53d}
 .ntog{margin-top:6px}
+.dhist{margin-top:18px}.dhist summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer}.dhist summary::-webkit-details-marker{display:none}.dhist summary:after{content:'▾';margin-left:8px;opacity:.7}.dhist[open] summary:after{content:'▴'}.drec{margin-left:auto;font-family:var(--fd);font-size:13px;padding:4px 10px;border-radius:8px;background:rgba(255,255,255,.12)}
+.duel.won{box-shadow:inset 3px 0 0 #3ee06a!important}.duel.lost{box-shadow:inset 3px 0 0 #ff5d6b!important}
 .ondot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7a849f;margin-right:5px;vertical-align:middle}.ondot.on{background:#3ee06a;box-shadow:0 0 8px #3ee06a}
 </style>
 <script>
@@ -2137,14 +2139,18 @@ Object.entries(ENDS).forEach(([g,fn])=>{const o=window[fn];if(!o)return;window[f
 const _go2=window.go;window.go=function(v){if(DUEL&&['home','groups','shop','prof'].includes(v))DUEL=null;_go2(v)};
 function duelRow(d){const mineA=d.a===me();const rival=mineA?d.bn:d.an;const mine=mineA?d.as:d.bs,his=mineA?d.bs:d.as;let st,act='';
  if(d.rej){st=mineA?esc(rival)+' rechazó el duelo':'Rechazaste el duelo'}else if(mine==null){st='Te toca jugar';act=`<button class="btn b-lime" onclick="duelPlay('${d.id}')">Jugar</button>`+(mineA?'':`<button class="back" style="padding:6px 9px" onclick="duelReject('${d.id}')" aria-label="Rechazar">✕</button>`)}else if(his==null)st='Esperando a '+esc(rival);else st=mine>his?'Has ganado':mine<his?'Has perdido':'Empate';
- return `<div class="duel setrow"><div class="dv"><b>vs ${esc(rival)} · ${DGAMES[d.g]}</b><small>${st}</small></div>${mine!=null?`<span class="dsc">${mine}${his!=null?' – '+his:''}</span>`:''}${act}</div>`}
+ const cls=d.rej||mine==null||his==null?'':mine>his?'won':mine<his?'lost':'';
+ return `<div class="duel setrow ${cls}"><div class="dv"><b>vs ${esc(rival)} · ${DGAMES[d.g]}</b><small>${st}</small></div>${mine!=null?`<span class="dsc">${mine}${his!=null?' – '+his:''}</span>`:''}${act}</div>`}
 window.socialHook=function(el){const fr=friendsOf();const wk=weekKey();
  let h=`<h3 class="ph">Amigos</h3>`;
  if(!me())h+=`<div class="setrow"><span>Inicia sesión con Google para añadir amigos y retarles</span></div>`;
  else{h+=`<div class="grow" style="margin-bottom:8px"><button class="btn b-lime" onclick="frAddModal()">+ Añadir amigo</button><button class="btn" style="background:rgba(255,255,255,.14);color:#fff" onclick="frMyQR()">Mi QR</button></div>`;
   if(SG.reqIn.length)h+=`<h3 class="ph">Solicitudes</h3><div class="frl">${SG.reqIn.map(r=>`<div class="frw setrow"><div class="rn"><b>${esc(r.fn)}</b><small>Quiere ser tu amigo</small></div><button class="btn b-lime" onclick="reqAnswer('${r.id}',true)">Aceptar</button><button class="back" style="padding:6px 9px" onclick="reqAnswer('${r.id}',false)" aria-label="Rechazar">✕</button></div>`).join('')}</div><h3 class="ph">Tus amigos</h3>`;
   h+=fr.length?`<div class="frl">${fr.map(uid=>{const c=card(uid);return `<div class="frw setrow">${avHtml(c.ph||AVIMG[c.a]||AVIMG.zorro,c.n,itemOf('frame',c.f||'nada'),38)}<div class="rn"><b>${nameHtml(c.n||'…',itemOf('color',c.c||'blanco'))}</b><small><span class="ondot ${isOn(c)?'on':''}"></span>${isOn(c)?'Conectado':'Desconectado'} · ${c.w===wk?c.p:0} pts</small></div>${activeWith(uid)?'<small style="opacity:.7">En duelo</small>':`<button class="btn b-pink" onclick="duelPick('${uid}')">Retar</button>`}<button class="back" style="padding:6px 9px" onclick="frDel('${uid}')" aria-label="Quitar">✕</button></div>`}).join('')}</div>`:`<div class="setrow"><span>Aún no tienes amigos. Búscalos por su nombre o escanea su QR.</span></div>`;
-  const ds=SG.duels.slice(0,12);if(ds.length)h+=`<h3 class="ph">Duelos</h3><div class="dlist">${ds.map(duelRow).join('')}</div>`}
+  const fin=d=>d.rej||(d.as!=null&&d.bs!=null);const act=SG.duels.filter(d=>!fin(d));const done=SG.duels.filter(fin).sort((x,y)=>(y.t||0)-(x.t||0)).slice(0,10);
+  if(act.length)h+=`<h3 class="ph">Duelos en curso</h3><div class="dlist">${act.map(duelRow).join('')}</div>`;
+  if(done.length){let w=0,l=0,e=0;SG.duels.filter(d=>!d.rej&&d.as!=null&&d.bs!=null).forEach(d=>{const m=d.a===me()?d.as:d.bs,o=d.a===me()?d.bs:d.as;m>o?w++:m<o?l++:e++});
+   h+=`<details class="dhist"><summary><h3 class="ph" style="display:inline-flex;margin:0">Últimos duelos</h3><span class="drec">${w}V · ${l}D${e?' · '+e+'E':''}</span></summary><div class="dlist" style="margin-top:10px">${done.map(duelRow).join('')}</div></details>`}}
  const box=document.createElement('div');box.innerHTML=h;el.insertBefore(box,document.getElementById('histBox')||null)};
 // ranking global
 window.globalRank=async function(){if(needLogin())return;modal(`<h3>Ranking global</h3><p style="text-align:center;color:rgba(255,255,255,.7);font-size:13px">Puntos de los retos diarios esta semana</p><div class="rank grank" id="gRank" style="max-height:60vh;overflow:auto;margin-top:8px"><small>Cargando…</small></div><div class="row" style="margin-top:10px"><button class="back" onclick="closeM()">Cerrar</button></div>`);
