@@ -1983,5 +1983,28 @@ const og=window.go;window.go=function(v){if(v!=='tetris'&&typeof trStop==='funct
 try{updHome()}catch(e){}
 })();
 </script>
+<style>
+#tetris .trwrap{margin-top:4px}
+#trCv{height:min(calc(100dvh - 330px),560px)!important;width:auto!important;max-width:62vw}
+.trpad{grid-template-columns:repeat(4,1fr)!important;grid-template-rows:64px 52px;max-width:440px}
+.trpad button{height:auto!important;font-size:26px!important}
+.trpad .tH{grid-column:1/-1}
+.trkeys{display:none;text-align:center;color:rgba(255,255,255,.7);font-size:13px;margin-top:12px}
+@media (hover:hover) and (pointer:fine){.trpad{display:none!important}.trkeys{display:block}#trCv{height:min(calc(100dvh - 200px),600px)!important}}
+@media (hover:none),(pointer:coarse){.trpad{display:grid!important}}
+body.trOn .bnav{display:none!important}
+</style>
+<script>
+(function(){
+ const pad=document.querySelector('#tetris .trpad');
+ pad.innerHTML='<button data-a="L" aria-label="Izquierda">◀</button><button data-a="U" aria-label="Girar">⟳</button><button data-a="D" aria-label="Bajar">▼</button><button data-a="R" aria-label="Derecha">▶</button><button class="tH" data-a="H">⤓ Caída rápida</button>';
+ pad.insertAdjacentHTML('afterend','<div class="trkeys">← → mover · ↑ girar · ↓ bajar · Espacio caída rápida · P pausa</div>');
+ let rep=null,del=null;const stop=()=>{clearTimeout(del);clearInterval(rep)};
+ pad.querySelectorAll('button').forEach(b=>{const a=b.dataset.a;
+  b.addEventListener('pointerdown',e=>{e.preventDefault();stop();trAct(a);try{navigator.vibrate&&navigator.vibrate(8)}catch(_){}if(a==='L'||a==='R'||a==='D')del=setTimeout(()=>rep=setInterval(()=>trAct(a),a==='D'?50:90),220)});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));b.addEventListener('contextmenu',e=>e.preventDefault())});
+ const og=window.go;window.go=function(v){og(v);document.body.classList.toggle('trOn',v==='tetris')};
+})();
+</script>
 </body>
 </html>
