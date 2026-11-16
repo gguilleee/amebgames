@@ -2018,5 +2018,33 @@ window.tNew=function(mode){closeM();tStop();setMode('triv',mode);
  T={mode,qs,i:0,ok:0,speed:0,log:[]};tShow()};
 })();
 </script>
+<style>
+.hbtn{width:38px;height:38px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-weight:800;font-size:17px;cursor:pointer;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.hlist{list-style:none;padding:0;margin:10px 0 4px;display:flex;flex-direction:column;gap:9px}
+.hlist li{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;line-height:1.4;text-align:left}
+.hlist li b.n{flex:none;width:24px;height:24px;border-radius:50%;background:rgba(76,141,255,.35);display:grid;place-items:center;font-size:12px}
+.hgoal{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;font-size:14px;text-align:center}
+</style>
+<script>
+(function(){
+const HELP={
+ wordle:['Palabra del día','Adivina la palabra oculta de 5 letras en 6 intentos.',['Escribe una palabra real de 5 letras y pulsa Enviar.','🟩 Verde: la letra está en su sitio.','🟨 Amarilla: la letra está en la palabra, pero en otro sitio.','⬛ Gris: la letra no está en la palabra.','Cuantos menos intentos uses, más puntos ganas.']],
+ triv:['Trivial','Responde 10 preguntas de cultura general.',['Tienes 15 segundos por pregunta.','Toca la respuesta que creas correcta: verde si aciertas, roja si fallas.','Ganas puntos por cada acierto y extra por responder rápido.','Si aciertas las 10 consigues un bonus.']],
+ sudo:['Sudoku','Rellena el tablero de 9×9 con números del 1 al 9.',['Cada fila, cada columna y cada cuadro de 3×3 debe tener los números del 1 al 9 sin repetir.','Toca una casilla vacía y luego el número.','Si te equivocas 3 veces, pierdes.','Cuanto más rápido y con menos errores, más puntos.']],
+ con:['Conexiones','Forma 4 grupos de 4 palabras que tengan algo en común.',['Selecciona 4 palabras que creas que van juntas y pulsa Comprobar.','Si aciertas, el grupo se coloca arriba con su color.','Si te sale «¡A una!», te falta una palabra por cambiar.','Puedes fallar 4 veces como máximo.']],
+ mast:['Mastermind','Descubre el código secreto de 4 colores en 10 intentos.',['Elige 4 colores y pulsa Comprobar.','Debajo de cada posición verás una pista:','🟩 color correcto en su sitio · ⬜ color que está en el código pero en otro sitio · ⬛ color que no está.','Usa las pistas para ir descartando hasta acertar.']],
+ enc:['Encadenados','Adivina 8 palabras encadenadas a contrarreloj.',['Verás una pista y la primera letra de cada palabra.','Escribe la palabra y pulsa Enter.','Si no la sabes, puedes pasar a la siguiente.','Ganas puntos por cada acierto y por el tiempo que te sobre.']],
+ pasa:['Pasapalabra','Completa el rosco: una palabra por cada letra del abecedario.',['Lee la definición: la palabra empieza por (o contiene) la letra marcada.','Escribe la respuesta y pulsa Enter.','Si no la sabes, di «Pasapalabra» y vuelve a ella más tarde.','Intenta acertar el máximo antes de que se acabe el tiempo.']],
+ hang:['Ahorcado','Adivina la palabra letra a letra antes de completar el muñeco.',['Verás la categoría y huecos por cada letra.','Toca letras del teclado: si están, se descubren.','Cada fallo dibuja una parte del muñeco.','Si se completa el muñeco, pierdes.']],
+ tetris:['Tetris','Coloca las piezas que caen para completar líneas.',['Cada línea horizontal completa desaparece y suma puntos.','Varias líneas a la vez dan muchos más puntos.','Móvil: botones ◀ ▶ para mover, ⟳ para girar, ▼ bajar y «Caída rápida».','PC: flechas ← → mover, ↑ girar, ↓ bajar, Espacio caída rápida, P pausa.','La partida termina cuando las piezas llegan arriba.']]
+};
+const RESTART={triv:()=>tNew(T.mode),enc:()=>eNew(E.mode),tetris:()=>trStart()};
+window.helpOk=function(v,auto){closeM();if(auto&&RESTART[v])try{RESTART[v]()}catch(e){}};
+window.showHelp=function(v,auto){const h=HELP[v];if(!h)return;
+ modal(`<h3>Cómo jugar · ${h[0]}</h3><div class="hgoal">${h[1]}</div><ul class="hlist">${h[2].map((t,i)=>`<li><b class="n">${i+1}</b><span>${t}</span></li>`).join('')}</ul><div class="row" style="margin-top:12px"><button class="btn b-lime" onclick="helpOk('${v}',${!!auto})">¡Entendido!</button></div>`)};
+document.querySelectorAll('section.view').forEach(sec=>{if(!HELP[sec.id])return;const top=sec.querySelector('.top');if(!top)return;const ph=[...top.children].pop();const b=document.createElement('button');b.className='hbtn';b.textContent='?';b.setAttribute('aria-label','Cómo jugar');b.onclick=()=>showHelp(sec.id);if(ph&&ph.tagName==='DIV'&&!ph.textContent.trim()){ph.style.cssText='width:70px;display:flex;justify-content:flex-end';ph.appendChild(b)}else top.appendChild(b)});
+const og=window.go;window.go=function(v){og(v);if(!HELP[v])return;let s={};try{s=JSON.parse(localStorage.getItem('amebHelp')||'{}')}catch(e){}if(s[v])return;s[v]=1;try{localStorage.setItem('amebHelp',JSON.stringify(s))}catch(e){}if(v==='tetris')try{trStop()}catch(e){}setTimeout(()=>showHelp(v,true),250)};
+})();
+</script>
 </body>
 </html>
